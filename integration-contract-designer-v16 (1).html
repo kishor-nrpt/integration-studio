@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Integration Contract Designer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090d;--bg2:#0d1117;--bg3:#131920;--bg4:#1a2230;--bg5:#212d3d;
+  --bdr:#1e2a3a;--bdr2:#28374d;--bdr3:#334560;
+  --tx:#d8e4f0;--tx2:#7a90a8;--tx3:#3d5068;--tx4:#243040;
+  --G:#00e5a0;--B:#3d9eff;--A:#f5a52a;--R:#ff5577;--P:#a78bfa;--C:#22d3ee;
+  --Gd:rgba(0,229,160,.08);--Bd:rgba(61,158,255,.08);--Ad:rgba(245,165,42,.08);
+  --Rd:rgba(255,85,119,.08);--Pd:rgba(167,139,250,.08);
+  --r:6px;--r2:10px;--F:'Syne',sans-serif;--M:'JetBrains Mono',monospace;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--tx);font-family:var(--F);font-size:13px;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bdr3);border-radius:2px}
+
+/* META */
+.meta{background:var(--bg2);border-bottom:1px solid var(--bdr2);display:flex;align-items:stretch;flex-shrink:0;min-height:36px}
+.logo{font-family:var(--M);font-size:12px;color:var(--G);letter-spacing:.08em;padding:0 12px;border-right:1px solid var(--bdr2);display:flex;align-items:center;gap:5px;flex-shrink:0}
+.logo small{color:var(--tx3);font-size:10px}
+.mf{display:flex;align-items:center;gap:5px;padding:3px 10px;border-right:1px solid var(--bdr2)}
+.ml{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
+.mi{background:transparent;border:none;color:var(--tx);font-family:var(--F);font-size:11px;outline:none;min-width:90px}
+.mi::placeholder{color:var(--tx4)}
+.msel{background:transparent;border:none;color:var(--tx2);font-family:var(--F);font-size:11px;outline:none;cursor:pointer}
+.msel option{background:var(--bg3)}
+.mr{margin-left:auto;display:flex;align-items:center;gap:5px;padding:3px 8px}
+
+/* BUTTONS */
+.btn{background:transparent;border:1px solid var(--bdr2);border-radius:var(--r);padding:4px 10px;font-size:10px;font-family:var(--F);color:var(--tx2);cursor:pointer;transition:all .12s;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.btn:hover{border-color:var(--G);color:var(--G);background:var(--Gd)}
+.btn.pri{background:var(--G);color:#000;border-color:var(--G);font-weight:600}
+.btn.pri:hover{background:#00cc8e}
+.btn.warn{border-color:var(--A);color:var(--A)}.btn.warn:hover{background:var(--Ad)}
+.sep{width:1px;height:16px;background:var(--bdr2)}
+
+/* TOOLBAR */
+.toolbar{background:var(--bg2);border-bottom:1px solid var(--bdr);padding:4px 8px;display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:wrap}
+
+/* WORKSPACE */
+.ws{display:flex;flex:1;overflow:hidden}
+
+/* SIDE PANELS */
+.panel{display:flex;flex-direction:column;background:var(--bg2);overflow:hidden;flex-shrink:0;transition:width .18s}
+.pL{border-right:1px solid var(--bdr2);width:250px}
+.pR{border-left:1px solid var(--bdr2);width:270px}
+.panel.col{width:30px!important}
+.ph{display:flex;align-items:center;gap:5px;padding:6px 8px;border-bottom:1px solid var(--bdr2);flex-shrink:0;min-height:32px}
+.ph-t{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--tx2);flex:1;white-space:nowrap}
+.ptag{font-size:8px;font-family:var(--M);padding:1px 5px;border-radius:3px}
+.tG{background:var(--Gd);color:var(--G);border:1px solid rgba(0,229,160,.2)}
+.tB{background:var(--Bd);color:var(--B);border:1px solid rgba(61,158,255,.2)}
+.cbtn{background:transparent;border:none;color:var(--tx3);cursor:pointer;font-size:11px;padding:1px 2px;line-height:1;flex-shrink:0}
+.cbtn:hover{color:var(--tx)}
+.rotlbl{writing-mode:vertical-rl;font-size:9px;color:var(--tx3);letter-spacing:.1em;text-transform:uppercase;margin:auto;padding:10px 0}
+.pbody{flex:1;overflow-y:auto;overflow-x:hidden}
+
+/* CONSUMER ENDPOINT DEF */
+.epdef{padding:7px 8px;border-bottom:1px solid var(--bdr2);background:var(--bg3);flex-shrink:0}
+.eprow{display:flex;gap:4px;align-items:center;margin-bottom:4px}
+.msel2{background:var(--bg4);border:1px solid var(--bdr2);border-radius:var(--r);padding:3px 5px;color:var(--G);font-family:var(--M);font-size:10px;font-weight:600;outline:none;cursor:pointer}
+.msel2 option{background:var(--bg3)}
+.pathinp{flex:1;background:var(--bg4);border:1px solid var(--bdr2);border-radius:var(--r);padding:3px 7px;color:var(--tx);font-family:var(--M);font-size:10px;outline:none}
+.pathinp:focus{border-color:var(--G)}
+.opinp{width:100%;background:var(--bg4);border:1px solid var(--bdr2);border-radius:var(--r);padding:3px 7px;color:var(--tx2);font-size:10px;outline:none}
+.opinp:focus{border-color:var(--G)}
+
+/* SECTIONS */
+.sec{border-bottom:1px solid var(--bdr)}
+.sch{display:flex;align-items:center;gap:4px;padding:4px 7px;cursor:pointer;user-select:none;background:var(--bg3)}
+.sch:hover{background:var(--bg4)}
+.sarr{font-size:8px;color:var(--tx3);transition:transform .12s;flex-shrink:0}
+.sarr.op{transform:rotate(90deg)}
+.stitle{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2);flex:1}
+.sct{font-size:8px;font-family:var(--M);padding:1px 4px;border-radius:8px;background:var(--bg5);color:var(--tx3)}
+.sbody{padding:4px 5px;display:flex;flex-direction:column;gap:1px}
+.sbody.hid{display:none}
+
+/* FIELD ITEMS */
+.fi{display:flex;align-items:center;gap:4px;padding:3px 5px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;transition:background .1s,border-color .1s;position:relative;user-select:none}
+.fi:hover{background:var(--bg3);border-color:var(--bdr)}
+.fi.mSrc{border-color:rgba(0,229,160,.25);background:rgba(0,229,160,.05)}
+.fi.mDst{border-color:rgba(61,158,255,.25);background:rgba(61,158,255,.05)}
+.fi.sel{outline:2px solid var(--A);border-color:var(--A)}
+.fi.flash{animation:flashFi .6s ease 3}
+@keyframes flashFi{0%,100%{background:transparent}50%{background:rgba(245,165,42,.25)}}
+.fi-indent{flex-shrink:0}
+.fi-tree{width:10px;font-size:8px;color:var(--tx3);flex-shrink:0}
+.fdot{width:6px;height:6px;border-radius:50%;border:1.5px solid var(--bdr3);flex-shrink:0;transition:all .1s}
+.fi.mSrc .fdot{background:var(--G);border-color:var(--G);box-shadow:0 0 4px rgba(0,229,160,.5)}
+.fi.mDst .fdot{background:var(--B);border-color:var(--B);box-shadow:0 0 4px rgba(61,158,255,.5)}
+.fname{font-family:var(--M);font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ftype{font-size:8px;color:var(--tx2);font-family:var(--M);flex-shrink:0;background:var(--bg4);padding:1px 3px;border-radius:2px;border:1px solid var(--bdr2)}
+.freq{font-size:9px;color:var(--R);flex-shrink:0}
+.facts{display:none;gap:2px;flex-shrink:0}
+.fi:hover .facts{display:flex}
+.fa{background:transparent;border:none;color:var(--tx3);cursor:pointer;font-size:10px;padding:0 1px;line-height:1}
+.fa:hover{color:var(--tx)}
+.addbtn{display:flex;align-items:center;gap:3px;padding:3px 5px;border-radius:var(--r);border:1px dashed var(--bdr2);color:var(--tx3);cursor:pointer;font-size:9px;background:transparent;width:100%;margin-top:2px;transition:all .1s}
+.addbtn:hover{border-color:var(--G);color:var(--G);background:var(--Gd)}
+
+/* DS ENDPOINT GROUPS */
+.epgrp{border:1px solid var(--bdr);border-radius:var(--r);margin:3px;overflow:hidden}
+.epgh{display:flex;align-items:center;gap:4px;padding:4px 6px;background:var(--bg3);cursor:pointer;user-select:none}
+.epgh:hover{background:var(--bg4)}
+.epsys{font-size:10px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eppath{font-size:9px;font-family:var(--M);color:var(--tx2)}
+.mpill{font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;flex-shrink:0}
+.mGET{background:rgba(0,229,160,.15);color:var(--G)}
+.mPOST{background:rgba(61,158,255,.15);color:var(--B)}
+.mPUT{background:rgba(245,165,42,.15);color:var(--A)}
+.mDELETE{background:rgba(255,85,119,.15);color:var(--R)}
+.mPATCH{background:rgba(167,139,250,.15);color:var(--P)}
+.xbadge{font-size:8px;padding:1px 4px;border-radius:8px;flex-shrink:0}
+.xseq{background:rgba(0,229,160,.1);color:var(--G)}
+.xpar{background:rgba(167,139,250,.1);color:var(--P)}
+.ordnum{font-size:8px;padding:1px 4px;border-radius:8px;background:var(--bg5);color:var(--tx3);flex-shrink:0}
+.epgb{padding:4px}
+.dssec{margin-bottom:3px}
+.dsseclbl{font-size:8px;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;padding:2px 3px;display:flex;align-items:center;gap:3px}
+
+/* CANVAS */
+.cv{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:180px;background:var(--bg)}
+.cvtop{background:var(--bg2);border-bottom:1px solid var(--bdr2);padding:5px 9px;display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap}
+.cvhint{font-size:10px;color:var(--A);font-family:var(--M);flex:1}
+.vtab{padding:3px 8px;font-size:10px;cursor:pointer;color:var(--tx3);border:1px solid var(--bdr2);border-radius:var(--r);background:transparent;transition:all .1s}
+.vtab.on{color:var(--G);border-color:var(--G);background:var(--Gd)}
+.vtab:hover:not(.on){color:var(--tx);border-color:var(--bdr3)}
+.cvmain{flex:1;position:relative;overflow:hidden}
+
+/* MAP VIEW */
+#mapView{position:absolute;inset:0;display:flex;flex-direction:column}
+.mapscroll{flex:1;overflow:auto;position:relative}
+.mapcols{display:flex;position:relative}
+.mccol{flex:1;padding:8px 5px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.mchdr{font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);padding:2px 5px;margin-bottom:3px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:5px}
+.mchdr span{flex:1}
+#mapSvg{position:absolute;top:0;left:0;pointer-events:none;overflow:visible}
+
+/* INTEGRATION LAYER NODES */
+.il{margin-bottom:6px}
+.il-hdr{display:flex;align-items:center;gap:4px;padding:3px 6px;cursor:pointer;user-select:none}
+.il-hdr:hover{background:var(--bg4);border-radius:var(--r)}
+.il-arr{font-size:8px;color:var(--tx3);transition:transform .12s}
+.il-arr.op{transform:rotate(90deg)}
+.il-title{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;flex:1}
+.il-ct{font-size:8px;font-family:var(--M);padding:1px 4px;border-radius:8px;background:var(--bg5);color:var(--tx3)}
+.il-body{display:flex;flex-direction:column;gap:2px;padding:0 3px}
+.il-body.hid{display:none}
+
+/* INTEGRATION LAYER FIELD NODES */
+.iln{display:flex;align-items:center;gap:5px;padding:4px 7px;border-radius:var(--r);border:1.5px dashed var(--bdr2);cursor:pointer;transition:all .12s;position:relative;user-select:none;margin:1px 0;background:var(--bg3)}
+.iln:hover{border-color:var(--bdr3);background:var(--bg4)}
+.iln.mapped{border-style:solid}
+.iln.flash{animation:flashN .5s ease 4}
+@keyframes flashN{0%,100%{background:var(--bg3)}50%{background:rgba(245,165,42,.2)}}
+.iln.dim{opacity:.25}
+.iln.active{opacity:1!important;box-shadow:0 0 0 2px var(--A)}
+.iln-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;border:1.5px solid var(--bdr3);transition:all .12s}
+.iln.mapped .iln-dot{border-style:solid;box-shadow:0 0 5px currentColor}
+.iln-name{font-family:var(--M);font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.iln-tags{display:flex;gap:3px;flex-shrink:0}
+.iln-tag{font-size:8px;font-family:var(--M);padding:1px 4px;border-radius:3px;background:var(--bg5);color:var(--tx3)}
+.iln-cnt{font-size:8px;font-family:var(--M);padding:1px 4px;border-radius:8px;background:var(--bg4);flex-shrink:0}
+
+/* LEGEND */
+.legend{display:flex;gap:8px;align-items:center;padding:3px 8px;border-top:1px solid var(--bdr);flex-shrink:0;flex-wrap:wrap;background:var(--bg2)}
+.lgi{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--tx3)}
+.lgl{width:18px;height:0;border-top:2px solid}
+.lgld{border-top-style:dashed}
+
+/* TABLE VIEW */
+#tableView{position:absolute;inset:0;overflow:auto;display:none}
+.mt{width:100%;border-collapse:collapse;font-size:10px}
+.mt th{padding:5px 9px;text-align:left;background:var(--bg3);color:var(--tx3);font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--bdr2);position:sticky;top:0;z-index:2}
+.mt td{padding:4px 9px;border-bottom:1px solid var(--bdr);font-family:var(--M);color:var(--tx2);vertical-align:middle}
+.mt tr:hover td{background:var(--bg3)}
+.mt tr.hlrow td{background:rgba(245,165,42,.07)}
+.tsrc{color:var(--G)}.tdst{color:var(--B)}
+.tbg{display:inline-block;font-size:8px;padding:1px 4px;border-radius:3px;background:var(--bg4);border:1px solid var(--bdr2);color:var(--tx2);font-family:var(--M)}
+.tbg.direct{border-color:rgba(0,229,160,.25);color:var(--G)}
+.tbg.rename{border-color:rgba(245,165,42,.25);color:var(--A)}
+.tbg.cast{border-color:rgba(61,158,255,.25);color:var(--B)}
+.tbg.formula{border-color:rgba(34,211,238,.25);color:var(--C)}
+.tbg.conditional{border-color:rgba(255,85,119,.25);color:var(--R)}
+.tbg.lookup{border-color:rgba(167,139,250,.25);color:var(--P)}
+.tbg.constant{border-color:rgba(245,165,42,.25);color:var(--A)}
+.tbg.req{background:var(--Gd);color:var(--G);border-color:rgba(0,229,160,.2)}
+.tbg.res{background:var(--Bd);color:var(--B);border-color:rgba(61,158,255,.2)}
+.delb{background:transparent;border:none;color:var(--tx3);cursor:pointer;font-size:13px;line-height:1}
+.delb:hover{color:var(--R)}
+.editb{background:transparent;border:none;color:var(--tx3);cursor:pointer;font-size:11px;line-height:1}
+.editb:hover{color:var(--G)}
+
+/* POPUP */
+
+/* STATUS */
+.statusbar{background:var(--bg2);border-top:1px solid var(--bdr);padding:3px 10px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.sdot{width:5px;height:5px;border-radius:50%;background:var(--G);box-shadow:0 0 4px var(--G)}
+.st{font-size:9px;color:var(--tx3);font-family:var(--M)}
+.st span{color:var(--tx2)}
+
+/* RESIZER */
+.rz{width:4px;cursor:col-resize;background:transparent;flex-shrink:0}
+.rz:hover{background:var(--bdr3)}
+
+/* MODALS */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:2000;backdrop-filter:blur(5px)}
+.modal{background:var(--bg2);border:1px solid var(--bdr2);border-radius:var(--r2);overflow:hidden;display:flex;flex-direction:column;max-height:88vh;box-shadow:0 32px 80px rgba(0,0,0,.7)}
+.msm{width:380px;max-width:95vw}
+.mmd{width:520px;max-width:95vw}
+.mlg{width:680px;max-width:95vw}
+.mhd{padding:12px 15px;border-bottom:1px solid var(--bdr2);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mtt{font-size:12px;font-weight:600}
+.mx{background:transparent;border:none;color:var(--tx3);cursor:pointer;font-size:18px;line-height:1}
+.mx:hover{color:var(--tx)}
+.mb{padding:13px 15px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1}
+.mf{display:flex;flex-direction:column;gap:3px}
+.mfh{display:flex;gap:7px}
+.lbl{font-size:9px;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+.inp,.sel,.ta{background:var(--bg3);border:1px solid var(--bdr2);border-radius:var(--r);padding:5px 8px;color:var(--tx);font-family:var(--M);font-size:11px;outline:none;width:100%;transition:border .1s}
+.inp:focus,.sel:focus,.ta:focus{border-color:var(--G)}
+.sel option{background:var(--bg3)}
+.ta{resize:vertical;min-height:48px;line-height:1.5}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.ckrow{display:flex;align-items:center;gap:6px;padding:2px 0}
+.ckrow input{accent-color:var(--G);width:12px;height:12px}
+.cklbl{font-size:10px;color:var(--tx2)}
+.mft{padding:9px 15px;border-top:1px solid var(--bdr2);display:flex;gap:6px;justify-content:flex-end;flex-shrink:0}
+.mdiv{text-align:center;color:var(--tx3);font-size:9px;padding:2px 0}
+.dz{border:1.5px dashed var(--bdr2);border-radius:var(--r);padding:10px;text-align:center;cursor:pointer;transition:all .12s}
+.dz:hover,.dz.ov2{border-color:var(--G);background:var(--Gd)}
+.dzt{font-size:10px;color:var(--tx3)}
+.dz:hover .dzt,.dz.ov2 .dzt{color:var(--G)}
+.cp{display:flex;align-items:center;gap:6px;background:var(--bg3);border-radius:var(--r);padding:6px 8px;border:1px solid var(--bdr2)}
+.cps{flex:1;background:var(--Gd);border:1px solid rgba(0,229,160,.2);border-radius:4px;padding:3px 6px;font-family:var(--M);font-size:10px;color:var(--G)}
+.cpd{flex:1;background:var(--Bd);border:1px solid rgba(61,158,255,.2);border-radius:4px;padding:3px 6px;font-family:var(--M);font-size:10px;color:var(--B)}
+.cpa{color:var(--tx3);font-size:12px}
+.otabs{display:flex;border-bottom:1px solid var(--bdr2);flex-shrink:0}
+.otab{padding:6px 12px;font-size:10px;cursor:pointer;color:var(--tx3);border-bottom:2px solid transparent;transition:all .1s}
+.otab.on{color:var(--G);border-bottom-color:var(--G)}
+.otab:hover{color:var(--tx)}
+.opre{background:var(--bg);border:1px solid var(--bdr2);border-radius:var(--r);padding:10px;font-family:var(--M);font-size:9px;color:var(--G);overflow:auto;max-height:52vh;white-space:pre;line-height:1.55}
+.toast{position:fixed;bottom:16px;right:16px;background:var(--bg3);border:1px solid var(--G);color:var(--G);padding:7px 12px;border-radius:var(--r);font-size:10px;font-family:var(--M);z-index:9999;pointer-events:none;transition:opacity .3s}
+.toast.err{border-color:var(--R);color:var(--R)}
+.iln-node.dim{opacity:.1;pointer-events:none}
+.iln-node.selected{outline:2px solid var(--A)}
+/* Drag and drop */
+.fi.dragging{opacity:.5;border-color:var(--A)!important;background:rgba(245,165,42,.08)!important}
+.fi.drop-target{border-color:var(--G)!important;background:rgba(0,229,160,.1)!important;box-shadow:0 0 0 2px rgba(0,229,160,.3)}
+.iln-node.drop-target{border-color:var(--G)!important;background:rgba(0,229,160,.1)!important;box-shadow:0 0 0 2px rgba(0,229,160,.3)}
+
+</style>
+</head>
+<body>
+
+<!-- META BAR -->
+<div class="meta">
+  <div class="logo">ICD <small>v4</small></div>
+  <div class="mf"><div class="ml">Integration</div><input class="mi" id="mName" value="Payment Gateway Integration" style="min-width:160px"/></div>
+  <div class="mf"><div class="ml">Ver</div><input class="mi" id="mVer" value="1.0.0" style="min-width:40px;max-width:55px"/></div>
+  <div class="mf"><div class="ml">Owner</div><input class="mi" id="mOwner" value="Payments Team" style="min-width:90px"/></div>
+  <div class="mf"><div class="ml">Pattern</div>
+    <select class="msel" id="mPattern"><option value="sync">Synchronous</option><option value="async">Async/Callback</option><option value="fire">Fire & Forget</option></select>
+  </div>
+  <div class="mf"><div class="ml">Orchestrator</div>
+    <select class="msel" id="mOrch"><option value="stepfn">AWS Step Functions</option><option value="apigw">API Gateway Direct</option><option value="lambda">Lambda</option><option value="other">Other</option></select>
+  </div>
+  <div class="mr">
+    <button class="btn" onclick="saveSession()">⤓ Save</button>
+    <button class="btn" onclick="document.getElementById('sIn').click()">⤒ Load</button>
+    <input type="file" id="sIn" style="display:none" accept=".json" onchange="loadSession(event)"/>
+    <div class="sep"></div>
+    <button class="btn warn" onclick="exportPassport()">⊞ Passport</button>
+    <button class="btn pri" onclick="openOutput()">⚡ Generate</button>
+  </div>
+</div>
+
+<div id="mapBanner" style="display:none;background:rgba(245,165,42,.12);border-bottom:1px solid rgba(245,165,42,.3);padding:4px 14px;font-size:10px;color:#f5a52a;font-family:var(--M);align-items:center;gap:10px;flex-shrink:0"><span id="bannerTxt"></span><button style="background:transparent;border:1px solid #f5a52a;border-radius:4px;padding:1px 8px;color:#f5a52a;font-size:9px;cursor:pointer" onclick="cancelMap()">✕ Cancel</button></div>
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="btn" onclick="addField('consumer','request')">+ Consumer Field</button>
+  <button class="btn" onclick="openAddEp()">+ Downstream Endpoint</button>
+  <div class="sep"></div>
+  <button class="btn" onclick="openBulk('consumer')">↑ Bulk Consumer</button>
+  <button class="btn" onclick="openBulk('ds')">↓ Bulk Downstream</button>
+  <div class="sep"></div>
+  <button class="btn" onclick="clearMappings()">Clear Mappings</button>
+  <div style="flex:1"></div>
+  <span style="font-size:9px;color:var(--tx3);font-family:var(--M)" id="mapBadge">0 mappings</span>
+</div>
+
+<!-- WORKSPACE -->
+<div class="ws">
+
+<!-- CONSUMER PANEL -->
+<div class="panel pL" id="panL">
+  <div class="ph"><div class="ph-t">Consumer API</div><div class="ptag tG">Source</div><button class="cbtn" onclick="colP('panL','panLB','◀','▶')">◀</button></div>
+  <div id="panLB" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div class="epdef">
+      <div class="eprow">
+        <select class="msel2" id="cMeth"><option>POST</option><option>GET</option><option>PUT</option><option>DELETE</option><option>PATCH</option></select>
+        <input class="pathinp" id="cPath" value="/api/v1/payment" placeholder="/path"/>
+      </div>
+      <input class="opinp" id="cOp" value="Process Payment" placeholder="Operation name"/>
+    </div>
+    <div class="pbody" id="consPB"></div>
+  </div>
+  <div class="rotlbl" id="panLR" style="display:none">Consumer</div>
+</div>
+
+<div class="rz" id="rzL" onmousedown="startRz(event,'L')"></div>
+
+<!-- CANVAS -->
+<div class="cv">
+  <div class="cvtop">
+    <span class="cvhint" id="cvHint">Click a consumer field, then a downstream field to map</span>
+    <button class="vtab on" id="vt-map" onclick="setView('map')">Canvas</button>
+    <button class="vtab" id="vt-tbl" onclick="setView('table')">Table</button>
+    <button class="btn" style="font-size:9px" onclick="rebuildCanvas()">↺</button>
+  </div>
+  <div class="cvmain">
+    <!-- MAP VIEW -->
+    <div id="mapView">
+      <div class="mapscroll" id="mapScroll">
+        <div id="mapCols" style="min-height:400px;position:relative;display:flex;align-items:flex-start;justify-content:center;padding:16px 60px">
+          <div id="colC" style="width:100%;max-width:500px;display:flex;flex-direction:column;background:var(--bg2);border:1px solid var(--bdr2);border-radius:10px">
+            <div style="font-size:9px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);padding:7px 12px;border-bottom:1px solid var(--bdr2);flex-shrink:0;text-align:center;background:var(--bg3);display:flex;align-items:center;justify-content:center;gap:6px">
+              <span style="width:6px;height:6px;border-radius:50%;background:var(--A);box-shadow:0 0 5px var(--A)88;display:inline-block"></span>
+              Integration Layer
+              <span style="width:6px;height:6px;border-radius:50%;background:var(--A);box-shadow:0 0 5px var(--A)88;display:inline-block"></span>
+            </div>
+            <div id="colCBody" style="overflow-y:visible;padding:6px 8px;display:flex;flex-direction:column;gap:0"></div>
+          </div>
+        </div>
+        <svg id="mapSvg" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible"></svg>
+      </div>
+      <div class="legend" id="legend">
+        <span style="font-size:9px;color:var(--tx3)">Legend:</span>
+        <div class="lgi"><div class="lgl" style="border-color:var(--G)"></div><span>Request flow →</span></div>
+        <div class="lgi"><div class="lgl lgld" style="border-color:var(--B)"></div><span>Response flow ←</span></div>
+      </div>
+    </div>
+    <!-- TABLE VIEW -->
+    <div id="tableView">
+      <div style="padding:5px 7px;border-bottom:1px solid var(--bdr2);background:var(--bg3);display:flex;gap:5px;align-items:center;flex-shrink:0"><input id="tfSearch" placeholder="Search field..." oninput="renderTable()" style="background:var(--bg4);border:1px solid var(--bdr2);border-radius:6px;padding:3px 7px;color:var(--tx);font-family:var(--M);font-size:10px;outline:none;flex:1"/><select id="tfDir" onchange="renderTable()" style="background:var(--bg4);border:1px solid var(--bdr2);border-radius:6px;padding:3px 5px;color:var(--tx2);font-size:10px;outline:none;cursor:pointer"><option value="">All dirs</option><option value="request">Request</option><option value="response">Response</option></select><select id="tfEp" onchange="renderTable()" style="background:var(--bg4);border:1px solid var(--bdr2);border-radius:6px;padding:3px 5px;color:var(--tx2);font-size:10px;outline:none;cursor:pointer"><option value="">All endpoints</option></select></div>
+      <table class="mt">
+        <thead><tr>
+          <th>Dir</th><th>Consumer</th><th>Section</th>
+          <th>Downstream</th><th>Endpoint</th><th>#</th>
+          <th>Transform</th><th>Expression</th><th>JSONata</th><th>Notes</th><th></th>
+        </tr></thead>
+        <tbody id="mapTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="rz" id="rzR" onmousedown="startRz(event,'R')"></div>
+
+<!-- DOWNSTREAM PANEL -->
+<div class="panel pR" id="panR">
+  <div class="ph"><button class="cbtn" onclick="colP('panR','panRB','▶','◀')">▶</button><div class="ph-t">Downstream</div><div class="ptag tB">Targets</div></div>
+  <div id="panRB" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div class="pbody" id="dsPB"><div id="dsEps" style="padding:4px"></div></div>
+  </div>
+  <div class="rotlbl" id="panRR" style="display:none">Downstream</div>
+</div>
+
+
+    <div id="drawer" style="position:absolute;top:0;right:0;bottom:0;width:300px;background:var(--bg2);border-left:1px solid var(--bdr2);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .2s ease;z-index:20;box-shadow:-8px 0 28px rgba(0,0,0,.5)">
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--bdr2);flex-shrink:0"><div id="drawerDot" style="width:10px;height:10px;border-radius:50%;flex-shrink:0;background:var(--G)"></div><div id="drawerTitle" style="font-size:12px;font-weight:600;font-family:var(--M);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Field Details</div><button onclick="closeDrawer()" style="background:transparent;border:none;color:var(--tx3);cursor:pointer;font-size:18px;line-height:1">×</button></div>
+      <div id="drawerBody" style="flex:1;overflow-y:auto"></div>
+    </div>
+</div><!-- ws -->
+
+<!-- STATUS -->
+<div class="statusbar">
+  <div class="sdot"></div><div class="st">Ready</div>
+  <div class="st" id="stM"><span>0</span> mappings</div>
+  <div class="st" id="stC"><span>0</span> consumer fields</div>
+  <div class="st" id="stD"><span>0</span> endpoints</div>
+  <div style="flex:1"></div>
+  <div class="st" id="stO">Orch: <span>Step Functions</span></div>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- FIELD MODAL -->
+<div class="ov" id="fieldModal" style="display:none">
+<div class="modal mmd">
+  <div class="mhd"><div class="mtt" id="fmT">Add Field</div><button class="mx" onclick="hide('fieldModal')">×</button></div>
+  <div class="mb">
+    <div class="g2">
+      <div class="mf"><div class="lbl">Field Name *</div><input class="inp" id="fN" placeholder="e.g. customerId"/></div>
+      <div class="mf"><div class="lbl">Display Name</div><input class="inp" id="fDN" placeholder="Customer ID"/></div>
+    </div>
+    <div class="g3">
+      <div class="mf"><div class="lbl">Type</div>
+        <select class="sel" id="fTy"><option>string</option><option>number</option><option>integer</option><option>boolean</option><option>object</option><option>array</option><option>date</option><option>datetime</option><option>uuid</option></select>
+      </div>
+      <div class="mf"><div class="lbl">Format</div><input class="inp" id="fFmt" placeholder="date-time"/></div>
+      <div class="mf"><div class="lbl">Max Length</div><input class="inp" id="fLen" type="number" placeholder="255"/></div>
+    </div>
+    <div class="g3">
+      <div class="ckrow"><input type="checkbox" id="fReq"/><label class="cklbl" for="fReq">Required</label></div>
+      <div class="ckrow"><input type="checkbox" id="fNull"/><label class="cklbl" for="fNull">Nullable</label></div>
+      <div class="ckrow"><input type="checkbox" id="fArr"/><label class="cklbl" for="fArr">Array []</label></div>
+    </div>
+    <div class="mf"><div class="lbl">Description</div><textarea class="ta" id="fDesc" style="min-height:36px" placeholder="Describe this field..."></textarea></div>
+    <div class="g2">
+      <div class="mf"><div class="lbl">Example</div><input class="inp" id="fEx" placeholder="CUST-001"/></div>
+      <div class="mf"><div class="lbl">Enum (comma separated)</div><input class="inp" id="fEnm" placeholder="active, inactive"/></div>
+    </div>
+    <div class="g2">
+      <div class="mf"><div class="lbl">Pattern (regex)</div><input class="inp" id="fPat" placeholder="^[A-Z]+$"/></div>
+      <div class="mf"><div class="lbl">Parent Field</div><input class="inp" id="fPar" placeholder="address (if nested)"/></div>
+    </div>
+  </div>
+  <div class="mft"><button class="btn" onclick="hide('fieldModal')">Cancel</button><button class="btn pri" onclick="saveField()">Save</button></div>
+</div></div>
+
+<!-- ENDPOINT MODAL -->
+<div class="ov" id="epModal" style="display:none">
+<div class="modal mmd">
+  <div class="mhd"><div class="mtt" id="epT">Add Endpoint</div><button class="mx" onclick="hide('epModal')">×</button></div>
+  <div class="mb">
+    <div class="mf"><div class="lbl">System Name *</div><input class="inp" id="epS" placeholder="Core Banking API"/></div>
+    <div class="mfh">
+      <div class="mf" style="flex:0 0 75px"><div class="lbl">Method</div><select class="sel" id="epM"><option>POST</option><option>GET</option><option>PUT</option><option>DELETE</option><option>PATCH</option></select></div>
+      <div class="mf" style="flex:1"><div class="lbl">Path *</div><input class="inp" id="epP" placeholder="/api/v1/payments"/></div>
+    </div>
+    <div class="g2">
+      <div class="mf"><div class="lbl">Base URL</div><input class="inp" id="epB" placeholder="https://api.internal"/></div>
+      <div class="mf"><div class="lbl">Summary</div><input class="inp" id="epSu" placeholder="Brief description"/></div>
+    </div>
+    <div class="g3">
+      <div class="mf"><div class="lbl">Timeout (ms)</div><input class="inp" id="epTO" placeholder="10000"/></div>
+      <div class="mf"><div class="lbl">Retries</div><input class="inp" id="epRt" placeholder="2"/></div>
+      <div class="mf"><div class="lbl">Call Order</div><input class="inp" id="epOr" type="number" placeholder="1"/></div>
+    </div>
+    <div class="g2">
+      <div class="mf"><div class="lbl">Execution</div><select class="sel" id="epEx"><option value="sequential">Sequential</option><option value="parallel">Parallel</option></select></div>
+      <div class="mf"><div class="lbl">Auth</div><select class="sel" id="epAu"><option value="none">None</option><option value="apikey">API Key</option><option value="basic">Basic Auth</option><option value="oauth2">OAuth 2.0</option><option value="mtls">mTLS</option><option value="iam">AWS IAM SigV4</option></select></div>
+    </div>
+    <div class="mf"><div class="lbl">Auth Notes / Connection ARN</div><input class="inp" id="epAN" placeholder="EventBridge Connection ARN or header name"/></div>
+  </div>
+  <div class="mft"><button class="btn" onclick="hide('epModal')">Cancel</button><button class="btn pri" onclick="saveEp()">Save</button></div>
+</div></div>
+
+<!-- BULK MODAL -->
+<div class="ov" id="bulkModal" style="display:none">
+<div class="modal mmd">
+  <div class="mhd"><div class="mtt" id="bulkT">Bulk Import</div><button class="mx" onclick="hide('bulkModal')">×</button></div>
+  <div class="mb">
+    <div class="mf"><div class="lbl">Target Section</div><select class="sel" id="bulkSec"></select></div>
+    <div class="mf"><div class="lbl">Upload .xlsx</div>
+      <div class="dz" id="bulkDZ" onclick="document.getElementById('bulkF').click()" ondragover="dzOv(event,'bulkDZ')" ondragleave="dzLv('bulkDZ')" ondrop="dzDr(event,'bulkDZ')">
+        <div class="dzt" id="bulkDZT">Drop .xlsx or click to browse</div>
+      </div>
+      <input type="file" id="bulkF" style="display:none" accept=".xlsx,.xls" onchange="handleBulk(event)"/>
+    </div>
+    <div class="mdiv">— or paste: name, type, required, description, example —</div>
+    <div class="mf"><textarea class="ta" id="bulkPaste" rows="7" placeholder="customerId, string, true, Unique customer ID, CUST-001&#10;amount, number, true, Amount in paise, 50000"></textarea></div>
+  </div>
+  <div class="mft"><button class="btn" onclick="hide('bulkModal')">Cancel</button><button class="btn pri" onclick="applyBulk()">Import</button></div>
+</div></div>
+
+<!-- TRANSFORM MODAL -->
+<div class="ov" id="tmModal" style="display:none">
+<div class="modal mmd">
+  <div class="mhd"><div class="mtt" id="tmT">Configure Mapping</div><button class="mx" onclick="cancelMap()">×</button></div>
+  <div class="mb">
+    <div class="cp"><div class="cps" id="tmSrc">—</div><div class="cpa">→</div><div class="cpd" id="tmDst">—</div></div>
+    <div class="g2">
+      <div class="mf"><div class="lbl">Direction</div>
+        <select class="sel" id="tmDir"><option value="request">Request → Consumer to Downstream</option><option value="response">Response ← Downstream to Consumer</option></select>
+      </div>
+      <div class="mf"><div class="lbl">Endpoint</div><select class="sel" id="tmEp"><option value="">— select —</option></select></div>
+    </div>
+    <div class="mf"><div class="lbl">Transform Type</div>
+      <select class="sel" id="tmTy" onchange="onTmTy()">
+        <option value="direct">Direct 1:1 — pass unchanged</option>
+        <option value="rename">Rename / Alias</option>
+        <option value="cast">Type Cast</option>
+        <option value="formula">Formula / Concat / Split</option>
+        <option value="conditional">Conditional / Business Rule</option>
+        <option value="lookup">Value Lookup / Translation</option>
+        <option value="constant">Constant — hardcoded value</option>
+      </select>
+    </div>
+    <div class="mf" id="tmER" style="display:none">
+      <div class="lbl" id="tmEL">Expression</div>
+      <textarea class="ta" id="tmEx" placeholder=""></textarea>
+    </div>
+    <div class="mf" id="tmJR" style="display:none">
+      <div class="lbl">JSONata <span style="color:var(--tx3);font-style:italic">(Step Functions)</span></div>
+      <textarea class="ta" id="tmJs" placeholder="e.g. $number($.body.order_amt) div 100"></textarea>
+    </div>
+    <div class="mf"><div class="lbl">Business Notes</div><textarea class="ta" id="tmNo" style="min-height:36px" placeholder="Explain the business intent..."></textarea></div>
+  </div>
+  <div class="mft"><button class="btn" onclick="cancelMap()">Cancel</button><button class="btn pri" onclick="confirmMap()">Save</button></div>
+</div></div>
+
+<!-- OUTPUT MODAL -->
+<div class="ov" id="outModal" style="display:none">
+<div class="modal mlg" style="height:88vh">
+  <div class="mhd"><div class="mtt">Generated Artifacts</div><button class="mx" onclick="hide('outModal')">×</button></div>
+  <div class="otabs">
+    <div class="otab on" id="ot1" onclick="setOT(1)">Consumer OpenAPI</div>
+    <div class="otab" id="ot2" onclick="setOT(2)">Step Functions ASL</div>
+    <div class="otab" id="ot3" onclick="setOT(3)">AI Context</div>
+    <div class="otab" id="ot4" onclick="setOT(4)">Summary</div>
+  </div>
+  <div class="mb" style="padding:9px">
+    <div style="font-size:10px;color:var(--tx2);padding:6px 8px;background:var(--bg3);border-radius:var(--r);border-left:3px solid var(--G);line-height:1.6">
+      Feed <strong style="color:var(--G)">AI Context</strong> to Claude: <em style="color:var(--tx3)">"Generate complete AWS integration implementation based on this spec."</em>
+    </div>
+    <pre class="opre" id="outPre"></pre>
+  </div>
+  <div class="mft"><button class="btn" onclick="hide('outModal')">Close</button><button class="btn" onclick="copyOut()">Copy</button><button class="btn pri" onclick="dlOut()">⤓ Download</button></div>
+</div></div>
+
+<script>
+'use strict';
+
+const EP_COLORS=['#3d9eff','#00e5a0','#f5a52a','#a78bfa','#ff5577','#22d3ee','#f472b6','#fb923c'];
+
+// ═══════════ STATE ═══════════
+const S={
+  consumer:{method:'POST',path:'/api/v1/payment',operation:'Process Payment',
+    request:[],path_params:[],query:[],headers:[],response:[],errors:[],
+    auth:{type:'none',notes:''},sla:{timeout:'30000',retries:'3',rateLimit:'1000'}},
+  downstream:{endpoints:[]},
+  mappings:[]
+};
+
+let pendingFrom=null;
+let editingField=null;
+let editingEp=null;
+let bulkSide='consumer';
+let currentView='map';
+let currentOTab=1;
+let generatedOuts={};
+let hlMid=null; // highlighted mapping id
+
+// ═══════════ MODAL / UI ═══════════
+function show(id){document.getElementById(id).style.display='flex';}
+function hide(id){document.getElementById(id).style.display='none';}
+function toast(msg,err=false,ms=2400){
+  const el=document.createElement('div');el.className='toast'+(err?' err':'');el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),350);},ms);
+}
+
+// ═══════════ PANEL COLLAPSE ═══════════
+function colP(pid,bid,ic,ie){
+  const pan=document.getElementById(pid),body=document.getElementById(bid);
+  const rot=document.getElementById(pid==='panL'?'panLR':'panRR');
+  const btn=pan.querySelector('.cbtn');
+  const col=pan.classList.toggle('col');
+  body.style.display=col?'none':'flex';rot.style.display=col?'block':'none';
+  pan.style.width=col?'30px':(pid==='panL'?'250px':'270px');
+  btn.textContent=col?ie:ic;
+  setTimeout(rebuildCanvas,150);
+}
+
+// ═══════════ SECTION TOGGLE ═══════════
+function togSec(id){
+  const b=document.getElementById('sb_'+id),a=document.getElementById('sa_'+id);
+  b.classList.toggle('hid');a.classList.toggle('op',!b.classList.contains('hid'));
+}
+
+// ═══════════ VIEW ═══════════
+function setView(v){
+  currentView=v;
+  document.getElementById('mapView').style.display=v==='map'?'flex':'none';
+  document.getElementById('tableView').style.display=v==='table'?'block':'none';
+  document.getElementById('vt-map').classList.toggle('on',v==='map');
+  document.getElementById('vt-tbl').classList.toggle('on',v==='table');
+  if(v==='table'){populateTfEp();renderTable();}
+  if(v==='map') rebuildCanvas();
+}
+function populateTfEp(){
+  const s=document.getElementById('tfEp');if(!s)return;
+  s.innerHTML='<option value="">All endpoints</option>';
+  S.downstream.endpoints.forEach(ep=>{const o=document.createElement('option');o.value=ep.id;o.textContent=ep.system+' '+ep.method+' '+ep.path;s.appendChild(o);});
+}
+
+// ═══════════ FIELD FACTORY ═══════════
+function mkF(o){return{id:'f'+Date.now()+Math.random().toString(36).slice(2),name:'',displayName:'',type:'string',format:'',maxLength:null,required:false,nullable:false,isArray:false,description:'',example:'',enum:[],pattern:'',parent:'',...o};}
+
+function readFm(){
+  return mkF({name:document.getElementById('fN').value.trim(),displayName:document.getElementById('fDN').value.trim(),type:document.getElementById('fTy').value,format:document.getElementById('fFmt').value.trim(),maxLength:document.getElementById('fLen').value||null,required:document.getElementById('fReq').checked,nullable:document.getElementById('fNull').checked,isArray:document.getElementById('fArr').checked,description:document.getElementById('fDesc').value.trim(),example:document.getElementById('fEx').value.trim(),enum:document.getElementById('fEnm').value.split(',').map(s=>s.trim()).filter(Boolean),pattern:document.getElementById('fPat').value.trim(),parent:document.getElementById('fPar').value.trim()});
+}
+
+function fillFm(f){
+  document.getElementById('fN').value=f.name||'';document.getElementById('fDN').value=f.displayName||'';
+  document.getElementById('fTy').value=f.type||'string';document.getElementById('fFmt').value=f.format||'';
+  document.getElementById('fLen').value=f.maxLength||'';document.getElementById('fReq').checked=!!f.required;
+  document.getElementById('fNull').checked=!!f.nullable;document.getElementById('fArr').checked=!!f.isArray;
+  document.getElementById('fDesc').value=f.description||'';document.getElementById('fEx').value=f.example||'';
+  document.getElementById('fEnm').value=(f.enum||[]).join(', ');document.getElementById('fPat').value=f.pattern||'';
+  document.getElementById('fPar').value=f.parent||'';
+}
+function clrFm(){['fN','fDN','fFmt','fLen','fDesc','fEx','fEnm','fPat','fPar'].forEach(id=>document.getElementById(id).value='');document.getElementById('fTy').value='string';['fReq','fNull','fArr'].forEach(id=>document.getElementById(id).checked=false);}
+
+// ═══════════ ADD/EDIT/SAVE FIELD ═══════════
+function addField(target,section,epIdx){
+  editingField={target,section,index:null,epIdx:epIdx||null};
+  document.getElementById('fmT').textContent='Add Field — '+section;clrFm();show('fieldModal');
+}
+function editField(target,section,index,epIdx){
+  editingField={target,section,index,epIdx:epIdx||null};
+  let f=target==='consumer'?S.consumer[section][index]:(S.downstream.endpoints[epIdx]?.[section]||[])[index];
+  if(!f)return;document.getElementById('fmT').textContent='Edit — '+f.name;fillFm(f);show('fieldModal');
+}
+function saveField(){
+  const f=readFm();if(!f.name){toast('Name required',true);return;}
+  const{target,section,index,epIdx}=editingField;
+  if(target==='consumer'){if(index!==null)S.consumer[section][index]=f;else S.consumer[section].push(f);renderConsumer();}
+  else{const ep=S.downstream.endpoints[epIdx];if(!ep[section])ep[section]=[];if(index!==null)ep[section][index]=f;else ep[section].push(f);renderDownstream();}
+  hide('fieldModal');updateStatus();rebuildCanvas();toast('"'+f.name+'" saved');
+}
+function delField(target,section,index,epIdx){
+  if(target==='consumer'){const f=S.consumer[section][index];S.mappings=S.mappings.filter(m=>!(m.cF===f.name&&m.cSec===section));S.consumer[section].splice(index,1);renderConsumer();}
+  else{const ep=S.downstream.endpoints[epIdx];const f=(ep[section]||[])[index];S.mappings=S.mappings.filter(m=>!(m.dF===f.name&&m.epId===ep.id));ep[section].splice(index,1);renderDownstream();}
+  updateStatus();rebuildCanvas();
+}
+
+// ═══════════ CONSUMER SECTIONS ═══════════
+const CSECS=[{k:'request',l:'Request Body'},{k:'path_params',l:'Path Params'},{k:'query',l:'Query Params'},{k:'headers',l:'Headers'},{k:'response',l:'Response Body'},{k:'errors',l:'Error Responses'}];
+
+function renderConsumer(){
+  const pb=document.getElementById('consPB');pb.innerHTML='';
+  CSECS.forEach(({k,l})=>{
+    const fields=S.consumer[k]||[];
+    const sec=document.createElement('div');sec.className='sec';
+    sec.innerHTML=`<div class="sch" onclick="togSec('c_${k}')"><span class="sarr op" id="sa_c_${k}">▶</span><span class="stitle">${l}</span><span class="sct">${fields.length}</span></div><div class="sbody" id="sb_c_${k}"></div>`;
+    pb.appendChild(sec);
+    const sb=document.getElementById('sb_c_'+k);
+    renderFTree(fields,sb,'consumer',k,null);
+    const ab=document.createElement('button');ab.className='addbtn';ab.textContent='+ add field';ab.onclick=()=>addField('consumer',k);sb.appendChild(ab);
+  });
+}
+
+// ═══════════ FIELD TREE ═══════════
+function renderFTree(fields,container,target,section,epIdx){
+  const tops=fields.filter(f=>!f.parent);
+  const kids=fields.filter(f=>f.parent);
+  tops.forEach(f=>{
+    const idx=fields.indexOf(f);
+    container.appendChild(mkFEl(f,idx,0,target,section,epIdx));
+    kids.filter(c=>c.parent===f.name).forEach(c=>{
+      const ci=fields.indexOf(c);container.appendChild(mkFEl(c,ci,1,target,section,epIdx));
+      fields.filter(gc=>gc.parent===c.name).forEach(gc=>{container.appendChild(mkFEl(gc,fields.indexOf(gc),2,target,section,epIdx));});
+    });
+  });
+  kids.filter(c=>!tops.find(t=>t.name===c.parent)).forEach(c=>container.appendChild(mkFEl(c,fields.indexOf(c),1,target,section,epIdx)));
+}
+
+function mkFEl(f,idx,depth,target,section,epIdx){
+  const mSrc=target==='consumer'&&S.mappings.some(m=>m.cF===f.name&&m.cSec===section);
+  const mDst=target==='ds'&&S.mappings.some(m=>m.dF===f.name&&m.epId===(epIdx!==null?S.downstream.endpoints[epIdx]?.id:''));
+  const el=document.createElement('div');
+  el.className='fi'+(mSrc?' mSrc':'')+(mDst?' mDst':'');
+  el.id=(target==='consumer'?'cf_':'dsf_')+(epIdx!==null?epIdx+'_':'')+sid(section)+'_'+sid(f.name);
+  el.innerHTML=`<div class="fi-indent" style="width:${depth*10}px"></div><div class="fi-tree">${depth>0?'└':''}</div><div class="fdot"></div><div class="fname" title="${f.description||f.name}">${f.parent?'<span style="color:var(--tx3)">'+f.parent+'.</span>':''}<span>${f.name}</span>${f.isArray?'<span style="color:var(--A);font-size:8px">[]</span>':''}</div><div class="ftype">${f.type}</div>${f.required?'<div class="freq">*</div>':''}<div class="facts"><button class="fa" onclick="event.stopPropagation();editField('${target}','${section}',${idx},${epIdx})">✎</button><button class="fa" onclick="event.stopPropagation();delField('${target}','${section}',${idx},${epIdx})">×</button></div>`;
+  el.addEventListener('click',e=>{if(e.target.classList.contains('fa'))return;onFClick(f.name,target,section,epIdx,el);});
+  // Drag and drop mapping
+  el.draggable = true;
+  el.addEventListener('dragstart', e => {
+    e.dataTransfer.effectAllowed = 'link';
+    e.dataTransfer.setData('text/plain', JSON.stringify({name:f.name,target,section,epIdx,epId:epIdx!==null?S.downstream.endpoints[epIdx]?.id:null}));
+    el.classList.add('dragging');
+  });
+  el.addEventListener('dragend', () => el.classList.remove('dragging'));
+  el.addEventListener('dragover', e => {
+    const src = getDragSrc();
+    if (src && src.target !== target) { e.preventDefault(); e.dataTransfer.dropEffect='link'; el.classList.add('drop-target'); }
+  });
+  el.addEventListener('dragleave', () => el.classList.remove('drop-target'));
+  el.addEventListener('drop', e => {
+    e.preventDefault(); el.classList.remove('drop-target');
+    const src = getDragSrc();
+    if (!src || src.target === target) return;
+    const cS = src.target==='consumer' ? src : {name:f.name,target,section,epIdx,epId:src.epId||null};
+    const dS = src.target==='ds' ? src : {name:f.name,target,section,epIdx,epId:src.epId||null};
+    const realCS = src.target==='consumer' ? src : cS;
+    const realDS = src.target==='ds' ? src : dS;
+    clearSel(); pendingFrom=null; hideBanner();
+    openTmModal(realCS, realDS, null);
+  });
+  return el;
+}
+
+// ═══════════ DOWNSTREAM SECTIONS ═══════════
+const DSSECS=[{k:'requestFields',l:'Request Fields'},{k:'responseFields',l:'Response Fields'},{k:'pathParams',l:'Path Params'},{k:'queryParams',l:'Query Params'},{k:'dsHeaders',l:'Headers'},{k:'errors',l:'Errors'}];
+
+function renderDownstream(){
+  const c=document.getElementById('dsEps');
+  if(!S.downstream.endpoints.length){c.innerHTML='<div style="padding:18px;text-align:center;color:var(--tx3);font-size:10px;opacity:.5">No endpoints yet</div>';return;}
+  c.innerHTML='';
+  S.downstream.endpoints.forEach((ep,ei)=>{
+    const col=EP_COLORS[ei%EP_COLORS.length];
+    const div=document.createElement('div');div.className='epgrp';div.style.borderColor=col+'33';
+    const xb=ep.execution==='parallel'?`<span class="xbadge xpar">par</span>`:`<span class="xbadge xseq">seq</span>`;
+    div.innerHTML=`<div class="epgh" onclick="togEpG('epgb_${ei}','epgi_${ei}')"><span class="sarr op" id="epgi_${ei}">▶</span><span class="mpill m${ep.method}">${ep.method}</span><span class="epsys" style="color:${col}">${ep.system}</span><span class="eppath">${ep.path}</span><span class="ordnum">#${ep.order||ei+1}</span>${xb}<button class="fa" onclick="event.stopPropagation();editEp(${ei})">✎</button><button class="fa" onclick="event.stopPropagation();delEp(${ei})">×</button></div><div class="epgb" id="epgb_${ei}" style="display:block"></div>`;
+    c.appendChild(div);
+    const body=document.getElementById('epgb_'+ei);
+    DSSECS.forEach(({k,l})=>{
+      const fields=ep[k]||[];
+      const sd=document.createElement('div');sd.className='dssec';
+      sd.innerHTML=`<div class="dsseclbl">${l} <span style="background:var(--bg5);border-radius:8px;padding:0 4px">${fields.length}</span><button class="fa" onclick="addField('ds','${k}',${ei})" style="color:${col}">+</button></div><div id="dsb_${ei}_${k}"></div>`;
+      body.appendChild(sd);
+      renderFTree(fields,document.getElementById('dsb_'+ei+'_'+k),'ds',k,ei);
+    });
+    body.insertAdjacentHTML('beforeend',`<div style="padding:3px;font-size:9px;color:var(--tx3)">Auth:<span style="color:var(--tx2)">${ep.auth}</span> · TO:<span style="color:var(--tx2)">${ep.timeout}ms</span> · Retry:<span style="color:var(--tx2)">${ep.retries}</span></div>`);
+  });
+}
+
+function togEpG(bid,iid){const b=document.getElementById(bid),i=document.getElementById(iid);const h=b.style.display==='none';b.style.display=h?'block':'none';i.classList.toggle('op',h);}
+
+// ═══════════ ENDPOINT CRUD ═══════════
+function openAddEp(){editingEp=null;document.getElementById('epT').textContent='Add Endpoint';['epS','epP','epB','epSu','epTO','epRt','epAN'].forEach(id=>document.getElementById(id).value='');document.getElementById('epM').value='POST';document.getElementById('epEx').value='sequential';document.getElementById('epAu').value='none';document.getElementById('epOr').value='';show('epModal');}
+function saveEp(){
+  const sys=document.getElementById('epS').value.trim(),path=document.getElementById('epP').value.trim();
+  if(!sys||!path){toast('System and path required',true);return;}
+  const ep={id:'ep'+Date.now(),system:sys,method:document.getElementById('epM').value,path,baseUrl:document.getElementById('epB').value.trim(),summary:document.getElementById('epSu').value.trim(),timeout:document.getElementById('epTO').value||'10000',retries:document.getElementById('epRt').value||'2',order:parseInt(document.getElementById('epOr').value)||S.downstream.endpoints.length+1,execution:document.getElementById('epEx').value,auth:document.getElementById('epAu').value,authNotes:document.getElementById('epAN').value.trim(),requestFields:[],responseFields:[],pathParams:[],queryParams:[],dsHeaders:[],errors:[]};
+  if(editingEp!==null)S.downstream.endpoints[editingEp]={...S.downstream.endpoints[editingEp],...ep};
+  else S.downstream.endpoints.push(ep);
+  S.downstream.endpoints.sort((a,b)=>a.order-b.order);
+  hide('epModal');renderDownstream();updateStatus();rebuildCanvas();toast('Endpoint saved');
+}
+function editEp(idx){editingEp=idx;const ep=S.downstream.endpoints[idx];document.getElementById('epT').textContent='Edit Endpoint';document.getElementById('epS').value=ep.system||'';document.getElementById('epP').value=ep.path||'';document.getElementById('epB').value=ep.baseUrl||'';document.getElementById('epSu').value=ep.summary||'';document.getElementById('epTO').value=ep.timeout||'';document.getElementById('epRt').value=ep.retries||'';document.getElementById('epOr').value=ep.order||'';document.getElementById('epM').value=ep.method||'POST';document.getElementById('epEx').value=ep.execution||'sequential';document.getElementById('epAu').value=ep.auth||'none';document.getElementById('epAN').value=ep.authNotes||'';show('epModal');}
+function delEp(idx){const ep=S.downstream.endpoints[idx];S.mappings=S.mappings.filter(m=>m.epId!==ep.id);S.downstream.endpoints.splice(idx,1);renderDownstream();updateStatus();rebuildCanvas();toast('Endpoint removed');}
+
+// ═══════════ FIELD CLICK → MAPPING ═══════════
+function onFClick(name,target,section,epIdx,el){
+  const epId=epIdx!==null&&epIdx!==undefined?S.downstream.endpoints[epIdx]?.id:null;
+  if(pendingFrom&&pendingFrom.target!==target){
+    clearSel();
+    const cS=pendingFrom.target==='consumer'?pendingFrom:{name,target,section,epIdx,epId};
+    const dS=pendingFrom.target==='ds'?pendingFrom:{name,target,section,epIdx,epId};
+    pendingFrom=null;
+    const b=document.getElementById('mapBanner');if(b)b.style.display='none';
+    openTmModal(cS,dS,null);return;
+  }
+  if(pendingFrom&&pendingFrom.target===target){
+    clearSel();if(el)el.classList.add('sel');
+    pendingFrom={name,target,section,epIdx,epId,el};
+    const b=document.getElementById('mapBanner');
+    if(b){b.style.display='flex';document.getElementById('bannerTxt').textContent='"'+name+'" selected — click a '+(target==='consumer'?'downstream':'consumer')+' field';}
+    return;
+  }
+  // First click — set as source for mapping, show banner
+  clearSel();if(el)el.classList.add('sel');
+  pendingFrom={name,target,section,epIdx,epId,el};
+  showBanner('"'+name+'" selected — now click a '+(target==='consumer'?'downstream':'consumer')+' field to map');
+}
+
+function clearSel(){document.querySelectorAll('.fi.sel').forEach(e=>e.classList.remove('sel'));}
+
+// Integration layer field click — show popup
+function onILClick(name,type,epId,section,ev){
+  ev.stopPropagation();
+  if(pendingFrom&&pendingFrom.target!==type){
+    const epIdx=type==='ds'?S.downstream.endpoints.findIndex(e=>e.id===epId):null;
+    const cS=pendingFrom.target==='consumer'?pendingFrom:{name,target,section,epIdx,epId};
+    const dS=pendingFrom.target==='ds'?pendingFrom:{name,target,section,epIdx,epId};
+    const realCS=pendingFrom.target==='consumer'?pendingFrom:cS;
+    const realDS=pendingFrom.target==='ds'?pendingFrom:dS;
+    pendingFrom=null;hideBanner();openTmModal(realCS,realDS,null);return;
+  }
+  const epIdx=type==='ds'?S.downstream.endpoints.findIndex(e=>e.id===epId):null;
+  let fobj=type==='consumer'?(S.consumer[section]||[]).find(f=>f.name===name):null;
+  if(!fobj&&type==='ds'){const ep=S.downstream.endpoints.find(e=>e.id===epId);if(ep){const allF=[...(ep.requestFields||[]),...(ep.responseFields||[]),...(ep.pathParams||[]),...(ep.queryParams||[]),...(ep.dsHeaders||[]),...(ep.errors||[])];fobj=allF.find(f=>f.name===name);}}
+  if(!fobj)return;
+  document.querySelectorAll('.iln.selected').forEach(n=>n.classList.remove('selected'));
+  const node=ev.currentTarget||ev.target.closest('.iln');if(node)node.classList.add('selected');
+  drawerOpen({type,field:fobj,section,epId,epIdx});
+}
+
+// ═══════════ POPUP ═══════════
+
+
+
+// ═══════════ TRANSFORM MODAL ═══════════
+let _tm={},_editMid=null;
+function openTmModal(cS,dS,editMid){
+  _tm={cS,dS};_editMid=editMid;
+  const existM=editMid?S.mappings.find(m=>m.id===editMid):null;
+  document.getElementById('tmT').textContent=editMid?'Edit Mapping':'Map: '+cS.name+' → '+dS.name;
+  document.getElementById('tmSrc').textContent=cS.name;
+  document.getElementById('tmDst').textContent=dS.name;
+  const sel=document.getElementById('tmEp');sel.innerHTML='<option value="">— select —</option>';
+  S.downstream.endpoints.forEach(ep=>{const o=document.createElement('option');o.value=ep.id;o.textContent=ep.method+' '+ep.path+' ('+ep.system+')';if(dS.epId&&ep.id===dS.epId)o.selected=true;sel.appendChild(o);});
+  if(existM){
+    document.getElementById('tmTy').value=existM.transformType||'direct';
+    document.getElementById('tmDir').value=existM.direction||'request';
+    document.getElementById('tmEp').value=existM.epId||'';
+    document.getElementById('tmEx').value=existM.expression||'';
+    document.getElementById('tmJs').value=existM.jsonata||'';
+    document.getElementById('tmNo').value=existM.notes||'';
+  } else {
+    document.getElementById('tmTy').value='direct';
+    document.getElementById('tmDir').value=dS.section==='responseFields'?'response':'request';
+    document.getElementById('tmEx').value='';document.getElementById('tmJs').value='';document.getElementById('tmNo').value='';
+  }
+  onTmTy();show('tmModal');
+}
+
+function editMapping(mid){
+  closeDrawer();
+  const m=S.mappings.find(x=>x.id===mid);if(!m)return;
+  const ep=S.downstream.endpoints.find(e=>e.id===m.epId);
+  const cS={name:m.cF,target:'consumer',section:m.cSec,epIdx:null,epId:null};
+  const dS={name:m.dF,target:'ds',section:m.dSec,epIdx:ep?S.downstream.endpoints.indexOf(ep):null,epId:m.epId};
+  openTmModal(cS,dS,mid);
+}
+
+function onTmTy(){
+  const t=document.getElementById('tmTy').value;
+  const er=document.getElementById('tmER'),jr=document.getElementById('tmJR'),lbl=document.getElementById('tmEL'),ta=document.getElementById('tmEx');
+  er.style.display=t==='direct'?'none':'flex';jr.style.display=(t==='direct'||t==='constant')?'none':'flex';
+  const cfg={rename:['New Key Name','customerIdentifier'],cast:['Cast Expression','$number($.body.order_amt) div 100'],formula:['Formula','$.body.first_name & " " & $.body.last_name'],conditional:['Condition','$.body.status = "A" ? "active" : "inactive"'],lookup:['Lookup Map (JSON)','{"A":"active","I":"inactive"}'],constant:['Constant Value','"INR"']};
+  if(cfg[t]){lbl.textContent=cfg[t][0];ta.placeholder='e.g. '+cfg[t][1];}
+}
+function cancelMap(){clearSel();pendingFrom=null;hide('tmModal');document.getElementById('cvHint').textContent='Click a consumer field then a downstream field to map';}
+function confirmMap(){
+  const epId=document.getElementById('tmEp').value||_tm.dS?.epId||'';
+  const dir=document.getElementById('tmDir').value,type=document.getElementById('tmTy').value;
+  const expr=document.getElementById('tmEx').value.trim(),js=document.getElementById('tmJs').value.trim(),notes=document.getElementById('tmNo').value.trim();
+  const {cS,dS}=_tm;
+  if(_editMid){
+    const idx=S.mappings.findIndex(m=>m.id===_editMid);
+    if(idx>=0)S.mappings[idx]={...S.mappings[idx],transformType:type,direction:dir,epId,expression:expr,jsonata:js,notes};
+  } else {
+    S.mappings=S.mappings.filter(m=>!(m.cF===cS.name&&m.dF===dS.name&&m.epId===epId));
+    S.mappings.push({id:'m'+Date.now(),cF:cS.name,cSec:cS.section,dF:dS.name,dSec:dS.section,epId,direction:dir,transformType:type,expression:expr,jsonata:js,notes});
+  }
+  hide('tmModal');renderConsumer();renderDownstream();rebuildCanvas();if(currentView==='table')renderTable();updateStatus();updateBadge();toast('Mapping saved');
+}
+function clearMappings(){S.mappings=[];renderConsumer();renderDownstream();rebuildCanvas();if(currentView==='table')renderTable();updateStatus();updateBadge();toast('Mappings cleared');}
+
+// ═══════════ CANVAS REBUILD ═══════════
+function rebuildCanvas(){
+  if(currentView!=='map')return;
+  buildColCenter();
+  setTimeout(drawLines,80);
+  buildLegend();
+}
+
+// Left col: consumer REQUEST fields (what integration layer receives)
+
+// Right col: downstream RESPONSE fields (what integration layer receives back)
+
+// Center col: Integration Layer — consumer request inputs + downstream response outputs
+// Only what the integration layer "owns" and works with
+
+function mkILGroup(id, title, count, color, open) {
+  const div = document.createElement('div');
+  div.style.cssText = 'border-bottom:1px solid var(--bdr);overflow:hidden';
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 10px;cursor:pointer;user-select:none;background:var(--bg3)';
+  hdr.onmouseenter = () => hdr.style.background = 'var(--bg4)';
+  hdr.onmouseleave = () => hdr.style.background = 'var(--bg3)';
+  const arr = document.createElement('span');
+  arr.style.cssText = 'font-size:8px;color:var(--tx3);transition:transform .12s;flex-shrink:0';
+  arr.textContent = open ? '▼' : '▶';
+  const dot = document.createElement('div');
+  dot.style.cssText = 'width:7px;height:7px;border-radius:50%;flex-shrink:0;background:' + color + ';box-shadow:0 0 5px ' + color + '66';
+  const ttl = document.createElement('span');
+  ttl.style.cssText = 'font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:' + color + ';flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+  ttl.textContent = title;
+  const ct = document.createElement('span');
+  ct.style.cssText = 'font-size:9px;font-family:var(--M);padding:1px 6px;border-radius:8px;background:var(--bg5);color:var(--tx3);flex-shrink:0';
+  ct.textContent = count;
+  hdr.appendChild(arr); hdr.appendChild(dot); hdr.appendChild(ttl); hdr.appendChild(ct);
+  const body = document.createElement('div');
+  body.id = id + '_body';
+  body.style.cssText = 'padding:5px 8px;display:' + (open ? 'flex' : 'none') + ';flex-direction:column;gap:2px';
+  hdr.onclick = () => {
+    const h = body.style.display === 'none';
+    body.style.display = h ? 'flex' : 'none';
+    arr.textContent = h ? '▼' : '▶';
+    setTimeout(() => {
+      hdr.scrollIntoView({behavior:'smooth', block:'nearest'});
+      drawLines();
+    }, 40);
+  };
+  div.appendChild(hdr); div.appendChild(body);
+  return div;
+}
+
+
+function mkILNode(f, maps, type, section, epId, epIdx, color, depth) {
+  depth = depth || 0;
+  const isMapped = maps.length > 0;
+  const node = document.createElement('div');
+  node.id = 'iln_' + type + '_' + (epId || 'c') + '_' + sid(f.name);
+  node.style.cssText = 'display:flex;align-items:center;gap:5px;padding:5px 8px;border-radius:6px;border:1px solid transparent;cursor:pointer;transition:all .12s;padding-left:' + (8 + depth * 12) + 'px;position:relative';
+
+  if (isMapped) {
+    node.style.borderColor = color + '55';
+    node.style.background = 'rgba(' + hexToRgb(color) + ',0.07)';
+  } else {
+    node.style.borderColor = 'var(--bdr2)';
+    node.style.opacity = '0.75';
+  }
+  node.onmouseenter = () => { if (!node.classList.contains('dim')) node.style.background = 'var(--bg4)'; };
+  node.onmouseleave = () => { node.style.background = isMapped ? 'rgba(' + hexToRgb(color) + ',0.06)' : 'transparent'; };
+
+  // Tree connector for nested fields
+  if (depth > 0) {
+    const tree = document.createElement('span');
+    tree.style.cssText = 'font-size:9px;color:var(--tx3);flex-shrink:0;margin-left:-4px';
+    tree.textContent = '└';
+    node.appendChild(tree);
+  }
+
+  // Status dot
+  const dot = document.createElement('div');
+  if (isMapped) {
+    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;flex-shrink:0;background:' + color + ';border:1.5px solid ' + color + ';box-shadow:0 0 5px ' + color + '88';
+  } else {
+    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;flex-shrink:0;border:1.5px solid var(--bdr3)';
+  }
+
+  // Name
+  const name = document.createElement('div');
+  name.style.cssText = 'font-family:var(--M);font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + (isMapped ? 'var(--tx)' : 'var(--tx2)');
+  name.textContent = f.name + (f.isArray ? '[]' : '');
+
+  // Type badge
+  const type2 = document.createElement('span');
+  type2.style.cssText = 'font-size:8px;color:var(--tx2);font-family:var(--M);flex-shrink:0;background:var(--bg4);padding:1px 4px;border-radius:3px;border:1px solid var(--bdr2)';
+  type2.textContent = f.type;
+
+  // Required marker
+  if (f.required) {
+    const req = document.createElement('span');
+    req.style.cssText = 'font-size:9px;color:var(--R);flex-shrink:0';
+    req.textContent = '*';
+    node.appendChild(dot); node.appendChild(name); node.appendChild(type2); node.appendChild(req);
+  } else {
+    node.appendChild(dot); node.appendChild(name); node.appendChild(type2);
+  }
+
+  // Mapping count badge
+  if (isMapped) {
+    const cnt = document.createElement('span');
+    cnt.style.cssText = 'font-size:8px;font-family:var(--M);padding:1px 5px;border-radius:8px;color:' + color + ';border:1px solid ' + color + '44;background:rgba(' + hexToRgb(color) + ',.08);flex-shrink:0';
+    cnt.textContent = maps.length + '✓';
+    node.appendChild(cnt);
+  } else {
+    const un = document.createElement('span');
+    un.style.cssText = 'font-size:8px;font-family:var(--M);padding:1px 5px;border-radius:8px;color:var(--A);border:1px dashed rgba(245,165,42,.4);flex-shrink:0;opacity:.7';
+    un.textContent = 'unmapped';
+    node.appendChild(un);
+  }
+
+  node.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (pendingFrom && pendingFrom.target !== type) {
+      const cSide = pendingFrom.target === 'consumer' ? pendingFrom : {name:f.name,target:type,section,epIdx,epId};
+      const dSide = pendingFrom.target === 'ds' ? pendingFrom : {name:f.name,target:type,section,epIdx,epId};
+      const realCS = pendingFrom.target === 'consumer' ? pendingFrom : cSide;
+      const realDS = pendingFrom.target === 'ds' ? pendingFrom : dSide;
+      pendingFrom = null; hideBanner();
+      openTmModal(realCS, realDS, null);
+      return;
+    }
+    document.querySelectorAll('.iln-node').forEach(n => {
+      n.classList.remove('iln-selected');
+      n.style.outline = '';
+      n.style.outlineOffset = '';
+    });
+    node.classList.add('iln-selected');
+    node.style.outline = '2px solid var(--A)';
+    node.style.outlineOffset = '1px';
+    node.scrollIntoView({behavior:'smooth', block:'nearest'});
+    // Start mapping from this IL node
+    pendingFrom={name:f.name,target:type,section,epIdx,epId,el:node};
+    showBanner('"'+f.name+'" selected — click a '+(type==='consumer'?'downstream':'consumer')+' field to map');
+  });
+
+  node.className = (node.className || '') + ' iln-node' + (isMapped ? ' mapped' : '');
+  return node;
+}
+
+
+function hexToRgb(hex){
+  const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return r?parseInt(r[1],16)+','+parseInt(r[2],16)+','+parseInt(r[3],16):'61,158,255';
+}
+
+// ═══════════ DRAW LINES — Through Integration Layer ═══════════
+
+
+
+function buildColCenter(){
+  const col = document.getElementById('colCBody');
+  if (!col) return;
+  col.innerHTML = '';
+
+  const hasConsumer = CSECS.some(({k}) => (S.consumer[k]||[]).length > 0);
+  const hasDs = S.downstream.endpoints.length > 0;
+
+  if (!hasConsumer && !hasDs) {
+    col.innerHTML = '<div style="padding:30px 12px;text-align:center;color:var(--tx3);font-size:10px;opacity:.4;line-height:2">Load consumer fields and<br>downstream endpoints to<br>build the integration layer</div>';
+    setTimeout(drawLines, 60);
+    return;
+  }
+
+  // ── Consumer API sections — all sections ──────────────────────────────
+  CSECS.forEach(({k, l}) => {
+    const fields = S.consumer[k] || [];
+    if (!fields.length) return;
+    const grp = mkILGroup('il_c_' + k, 'Consumer · ' + l, fields.length, '#00e5a0', true);
+    col.appendChild(grp);
+    const body = document.getElementById('il_c_' + k + '_body');
+    // Tree render for nested fields
+    const tops = fields.filter(f => !f.parent);
+    const kids = fields.filter(f => f.parent);
+    function addNode(f, depth) {
+      const maps = S.mappings.filter(m => m.cF === f.name && m.cSec === k);
+      body.appendChild(mkILNode(f, maps, 'consumer', k, null, null, '#00e5a0', depth));
+      kids.filter(c => c.parent === f.name).forEach(c => addNode(c, depth + 1));
+    }
+    tops.forEach(f => addNode(f, 0));
+    kids.filter(c => !tops.find(t => t.name === c.parent)).forEach(f => addNode(f, 1));
+  });
+
+  // ── Downstream sections — all sections per endpoint ───────────────────
+  S.downstream.endpoints.forEach((ep, ei) => {
+    const c = EP_COLORS[ei % EP_COLORS.length];
+    const epLabel = ep.system + ' · ' + ep.method + ' ' + ep.path;
+    // Only render endpoint header if it has any fields
+    const hasFields = DSSECS.some(({k}) => (ep[k]||[]).length > 0);
+    if (!hasFields) return;
+    // Endpoint divider label
+    const divider = document.createElement('div');
+    divider.style.cssText = 'font-size:9px;font-weight:600;color:' + c + ';padding:8px 10px 3px;letter-spacing:.05em;border-top:1px solid ' + c + '22;margin-top:4px;display:flex;align-items:center;gap:5px';
+    divider.innerHTML = '<span style="width:5px;height:5px;border-radius:50%;background:' + c + ';display:inline-block;flex-shrink:0"></span>' + epLabel;
+    col.appendChild(divider);
+
+    // Only show sections the IL owns from downstream: responses, headers, errors
+    const IL_DS = [{k:'responseFields',l:'Response Fields'},{k:'dsHeaders',l:'Headers'},{k:'errors',l:'Errors'}];
+    IL_DS.forEach(({k, l}) => {
+      const fields = ep[k] || [];
+      if (!fields.length) return;
+      const secId = 'il_d_' + ei + '_' + k;
+      const grp = mkILGroup(secId, l, fields.length, c, true);
+      col.appendChild(grp);
+      const body = document.getElementById(secId + '_body');
+      fields.forEach(f => {
+        const maps = S.mappings.filter(m => m.dF === f.name && m.epId === ep.id && m.dSec === k);
+        body.appendChild(mkILNode(f, maps, 'ds', k, ep.id, ei, c, 0));
+      });
+    });
+  });
+
+  setTimeout(drawLines, 80);
+}
+
+
+
+
+
+
+
+function hlMapping(mid){
+  hlMid = hlMid === mid ? null : mid;
+  const allNodes = document.querySelectorAll('.iln-node');
+  allNodes.forEach(n => { n.classList.remove('dim'); n.style.outline = ''; n.style.outlineOffset = ''; });
+  if (hlMid) {
+    const m = S.mappings.find(x => x.id === hlMid);
+    const ep = m ? S.downstream.endpoints.find(e => e.id === m.epId) : null;
+    allNodes.forEach(n => {
+      const isCons = n.id === 'iln_consumer_c_' + sid(m?.cF);
+      const isDs = n.id === 'iln_ds_' + (ep?.id) + '_' + sid(m?.dF);
+      if (!isCons && !isDs) n.classList.add('dim');
+      else flashEl(n);
+    });
+  }
+  drawLines();
+}
+
+
+function flashEl(el){
+  el.classList.remove('flash');
+  void el.offsetWidth; // reflow
+  el.classList.add('flash');
+  setTimeout(()=>el.classList.remove('flash'),2500);
+}
+
+function buildLegend(){
+  const leg=document.getElementById('legend');
+  leg.innerHTML='<span style="font-size:9px;color:var(--tx3)">Endpoints:</span><div class="lgi"><div class="lgl" style="border-color:var(--G)"></div><span>Request →</span></div><div class="lgi"><div class="lgl lgld" style="border-color:var(--B)"></div><span>Response ←</span></div>';
+  S.downstream.endpoints.forEach((ep,ei)=>{
+    const c=EP_COLORS[ei%EP_COLORS.length];
+    const d=document.createElement('div');d.className='lgi';
+    d.innerHTML='<div class="lgl" style="border-color:'+c+'"></div><span style="color:'+c+'">'+ep.system+'</span><span>'+ep.method+' '+ep.path+'</span>';
+    leg.appendChild(d);
+  });
+}
+
+// ═══════════ MAPPING TABLE ═══════════
+function renderTable(){
+  const tb=document.getElementById('mapTbody');
+  if(!S.mappings.length){tb.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--tx3);padding:20px">No mappings yet</td></tr>';return;}
+  tb.innerHTML='';
+  S.mappings.forEach(m=>{
+    const ep=S.downstream.endpoints.find(e=>e.id===m.epId);
+    const isHL=hlMid===m.id;
+    const tr=document.createElement('tr');if(isHL)tr.className='hlrow';
+    tr.innerHTML=`<td><span class="tbg ${m.direction}">${m.direction}</span></td><td class="tsrc">${m.cF}</td><td style="color:var(--tx3);font-size:9px">${m.cSec||''}</td><td class="tdst">${m.dF}</td><td style="color:var(--tx3);font-size:9px">${ep?ep.method+' '+ep.path:'—'}</td><td style="color:var(--tx3)">${ep?'#'+ep.order:'—'}</td><td><span class="tbg ${m.transformType}">${m.transformType}</span></td><td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m.expression||''}">${m.expression||'—'}</td><td style="color:var(--C);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m.jsonata||''}">${m.jsonata||'—'}</td><td style="color:var(--tx3);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.notes||'—'}</td><td style="display:flex;gap:3px"><button class="editb" onclick="editMapping('${m.id}')">✎</button><button class="delb" onclick="delMapping('${m.id}')">×</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+function delMapping(id){S.mappings=S.mappings.filter(m=>m.id!==id);renderConsumer();renderDownstream();rebuildCanvas();if(currentView==='table')renderTable();updateStatus();updateBadge();}
+
+// ═══════════ BULK ═══════════
+function openBulk(side){
+  bulkSide=side;
+  document.getElementById('bulkT').textContent='Bulk Import — '+(side==='consumer'?'Consumer':'Downstream');
+  const sel=document.getElementById('bulkSec');sel.innerHTML='';
+  if(side==='consumer'){CSECS.forEach(s=>{const o=document.createElement('option');o.value=s.k;o.textContent=s.l;sel.appendChild(o);});}
+  else{S.downstream.endpoints.forEach((ep,i)=>{DSSECS.forEach(s=>{const o=document.createElement('option');o.value=i+'|'+s.k;o.textContent='EP'+(i+1)+': '+ep.system+' — '+s.l;sel.appendChild(o);});});if(!S.downstream.endpoints.length){toast('Add endpoint first',true);return;}}
+  document.getElementById('bulkPaste').value='';document.getElementById('bulkDZT').textContent='Drop .xlsx or click';show('bulkModal');
+}
+function dzOv(e,id){e.preventDefault();document.getElementById(id).classList.add('ov2');}
+function dzLv(id){document.getElementById(id).classList.remove('ov2');}
+function dzDr(e,id){e.preventDefault();dzLv(id);const f=e.dataTransfer.files[0];if(f)readXlsx(f);}
+function handleBulk(e){const f=e.target.files[0];if(f)readXlsx(f);}
+function readXlsx(file){
+  const rd=new FileReader();rd.onload=ev=>{
+    try{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});const h=rows[0]||[];const ni=Math.max(0,h.findIndex(x=>/name|field/i.test(String(x))));const ti=Math.max(1,h.findIndex(x=>/type/i.test(String(x))));const ri=Math.max(2,h.findIndex(x=>/req/i.test(String(x))));const di=Math.max(3,h.findIndex(x=>/desc/i.test(String(x))));const ei=Math.max(4,h.findIndex(x=>/exam/i.test(String(x))));const lines=[];for(let i=1;i<rows.length;i++){const r=rows[i];const n=String(r[ni]||'').trim();if(!n)continue;lines.push([n,String(r[ti]||'string').trim(),/true|yes|1/i.test(String(r[ri]||'')),String(r[di]||'').trim(),String(r[ei]||'').trim()].join(', '));}document.getElementById('bulkPaste').value=lines.join('\n');document.getElementById('bulkDZT').textContent='✓ '+lines.length+' rows';toast('Parsed '+lines.length+' fields');}catch(err){toast('Excel error: '+err.message,true);}
+  };rd.readAsArrayBuffer(file);
+}
+function applyBulk(){
+  const raw=document.getElementById('bulkPaste').value.trim();if(!raw){toast('Nothing to import',true);return;}
+  const sv=document.getElementById('bulkSec').value;
+  const fields=raw.split('\n').map(line=>{const p=line.split(',').map(s=>s.trim());if(!p[0])return null;return mkF({name:p[0],type:p[1]||'string',required:/true|yes/i.test(p[2]||''),description:p[3]||'',example:p[4]||''});}).filter(Boolean);
+  if(bulkSide==='consumer'){S.consumer[sv]=[...(S.consumer[sv]||[]),...fields];renderConsumer();}
+  else{const[ei,k]=sv.split('|');const ep=S.downstream.endpoints[parseInt(ei)];if(!ep){toast('Endpoint not found',true);return;}if(!ep[k])ep[k]=[];ep[k]=[...ep[k],...fields];renderDownstream();}
+  hide('bulkModal');rebuildCanvas();updateStatus();toast('Imported '+fields.length+' fields');
+}
+
+// ═══════════ GENERATE ═══════════
+function getMeta(){return{name:document.getElementById('mName').value||'Integration',version:document.getElementById('mVer').value||'1.0.0',owner:document.getElementById('mOwner').value||'',pattern:document.getElementById('mPattern').value||'sync',orch:document.getElementById('mOrch').value||'stepfn',cM:document.getElementById('cMeth').value||'POST',cP:document.getElementById('cPath').value||'/integration',cO:document.getElementById('cOp').value||'Integration'};}
+
+function openOutput(){const m=getMeta();generatedOuts={openapi:genOpenAPI(m),stepfn:genASL(m),ai:genAI(m),summary:genSum(m)};document.getElementById('outPre').textContent=generatedOuts.openapi;setOT(1);show('outModal');}
+
+function genOpenAPI(m){
+  const bp=(fields)=>{const p={};(fields||[]).forEach(f=>{const d={type:f.isArray?'array':f.type};if(f.format)d.format=f.format;if(f.description)d.description=f.description;if(f.example)d.example=f.example;if(f.enum&&f.enum.length)d.enum=f.enum;if(f.pattern)d.pattern=f.pattern;if(f.maxLength)d.maxLength=parseInt(f.maxLength);if(f.nullable)d.nullable=true;if(f.isArray)d.items={type:f.type};p[f.name]=d;});return p;};
+  const rp=bp(S.consumer.request),resp=bp(S.consumer.response);
+  const rr=(S.consumer.request||[]).filter(f=>f.required).map(f=>f.name);
+  const pp=(S.consumer.path_params||[]).map(f=>({name:f.name,in:'path',required:true,schema:{type:f.type},description:f.description||''}));
+  const qp=(S.consumer.query||[]).map(f=>({name:f.name,in:'query',required:!!f.required,schema:{type:f.type},description:f.description||''}));
+  const hp=(S.consumer.headers||[]).map(f=>({name:f.name,in:'header',required:!!f.required,schema:{type:f.type},description:f.description||''}));
+  const errs={};(S.consumer.errors||[]).forEach(e=>{errs[e.name||'400']={description:e.description||e.name};});
+  return JSON.stringify({openapi:'3.0.0',info:{title:m.name+' — Consumer API',version:m.version,description:'Integration API. Orchestrated via '+m.orch+'. Owner: '+m.owner},paths:{[m.cP]:{[m.cM.toLowerCase()]:{summary:m.cO,operationId:m.cO.replace(/\s+/g,''),tags:['integration'],parameters:[...pp,...qp,...hp],requestBody:{required:true,content:{'application/json':{schema:{type:'object',...(rr.length?{required:rr}:{}),properties:rp}}}},responses:{'200':{description:'Success',content:{'application/json':{schema:{type:'object',properties:resp}}}},'400':{description:'Validation Error',content:{'application/json':{schema:{$ref:'#/components/schemas/IntegrationError'}}}},'502':{description:'Downstream Error',content:{'application/json':{schema:{$ref:'#/components/schemas/IntegrationError'}}}},...errs}}}},components:{schemas:{IntegrationError:{type:'object',required:['code','message','traceId','timestamp'],properties:{code:{type:'string'},message:{type:'string'},traceId:{type:'string',format:'uuid'},timestamp:{type:'string',format:'date-time'}}}}}},null,2);}
+
+function genASL(m){
+  const sts={};
+  const safeName=s=>(s||'').replace(/[^a-zA-Z0-9]/g,'');
+  const firstEp=S.downstream.endpoints.filter(e=>e.execution!=='parallel')[0];
+  sts['ValidateInput']={Type:'Task',Resource:'arn:aws:states:::lambda:invoke',Parameters:{'FunctionName':'${ValidationLambdaArn}','Payload.$':'$'},ResultPath:'$.validation',Next:firstEp?'Call_'+safeName(firstEp.system):(S.downstream.endpoints.length?'ParallelCalls':'BuildResponse'),Catch:[{ErrorEquals:['States.ALL'],Next:'HandleError',ResultPath:'$.error'}]};
+  const seqEps=S.downstream.endpoints.filter(e=>e.execution!=='parallel');
+  const parEps=S.downstream.endpoints.filter(e=>e.execution==='parallel');
+  seqEps.forEach((ep,i)=>{
+    const sn='Call_'+safeName(ep.system);const ne=seqEps[i+1];
+    const nx=ne?'Call_'+safeName(ne.system):(parEps.length?'ParallelCalls':'BuildResponse');
+    const rm={};S.mappings.filter(m2=>m2.epId===ep.id&&m2.direction==='request').forEach(m2=>{rm[m2.dF+'.$']=m2.jsonata||'$.body.'+m2.cF;});
+    sts[sn]={Type:'Task',Resource:'arn:aws:states:::http:invoke',Comment:'Call '+ep.system,Parameters:{ApiEndpoint:(ep.baseUrl||'')+ep.path,Method:ep.method,Authentication:{ConnectionArn:'${'+ safeName(ep.system)+'ConnectionArn}'},...(Object.keys(rm).length?{RequestBody:rm}:{'RequestBody.$':'$.body'})},ResultPath:'$.ds.'+safeName(ep.system),TimeoutSeconds:Math.round(parseInt(ep.timeout||10000)/1000),Next:nx,Retry:[{ErrorEquals:['States.TaskFailed','States.Timeout'],MaxAttempts:parseInt(ep.retries||2),IntervalSeconds:2,BackoffRate:2}],Catch:[{ErrorEquals:['States.ALL'],Next:'HandleError',ResultPath:'$.error'}]};
+  });
+  if(parEps.length){const branches=parEps.map(ep=>{const sn='Par_'+safeName(ep.system);const br={StartAt:sn,States:{}};br.States[sn]={Type:'Task',Resource:'arn:aws:states:::http:invoke',Parameters:{ApiEndpoint:(ep.baseUrl||'')+ep.path,Method:ep.method,Authentication:{ConnectionArn:'${'+safeName(ep.system)+'ConnectionArn}'},'RequestBody.$':'$.body'},ResultPath:'$.ds.'+safeName(ep.system),End:true,Retry:[{ErrorEquals:['States.TaskFailed'],MaxAttempts:parseInt(ep.retries||2),IntervalSeconds:2,BackoffRate:2}]};return br;});sts['ParallelCalls']={Type:'Parallel',Branches:branches,ResultPath:'$.parallel',Next:'BuildResponse',Catch:[{ErrorEquals:['States.ALL'],Next:'HandleError',ResultPath:'$.error'}]};}
+  const rm2={};S.mappings.filter(m2=>m2.direction==='response').forEach(m2=>{rm2[m2.cF+'.$']=m2.jsonata||'$.ds.'+m2.dF;});
+  sts['BuildResponse']={Type:'Pass',Parameters:Object.keys(rm2).length?rm2:{'response.$':'$.ds'},ResultPath:'$.output',Next:'Success'};
+  sts['Success']={Type:'Succeed'};
+  sts['HandleError']={Type:'Task',Resource:'arn:aws:states:::lambda:invoke',Comment:'Convert downstream errors to integration error format',Parameters:{'FunctionName':'${ErrorHandlerLambdaArn}','Payload.$':'$'},ResultPath:'$.errorResponse',Next:'Fail'};
+  sts['Fail']={Type:'Fail',ErrorPath:'$.error.Error',CausePath:'$.error.Cause'};
+  return JSON.stringify({Comment:m.name+' — Step Functions State Machine. Pattern: '+m.pattern,StartAt:'ValidateInput',States:sts},null,2);
+}
+
+function genAI(m){return JSON.stringify({instruction:'Generate complete production-ready AWS integration implementation. Node.js 20.x. Deliverables: (1) Lambda validation function with field-level errors, (2) Lambda error handler mapping downstream errors to {code,message,traceId,timestamp}, (3) Fill in all null JSONata expressions, (4) Jest unit tests for each transformation, (5) SAM/CloudFormation template. AWS best practices: X-Ray tracing, correlation IDs, least-privilege IAM.',integration:{name:m.name,version:m.version,owner:m.owner,pattern:m.pattern,orchestrator:m.orch,consumerEndpoint:{method:m.cM,path:m.cP,operation:m.cO}},consumerContract:{requestFields:S.consumer.request,responseFields:S.consumer.response,pathParams:S.consumer.path_params,queryParams:S.consumer.query,headers:S.consumer.headers,errors:S.consumer.errors},downstreamSystems:S.downstream.endpoints,mappings:S.mappings.map(m2=>{const ep=S.downstream.endpoints.find(e=>e.id===m2.epId);return{...m2,endpoint:ep?{system:ep.system,method:ep.method,path:ep.path}:null};}),notes:'Use HTTP Task for all downstream calls via EventBridge Connections. Use JSONata inline in Parameters for transformations. Lambda only for validation and error handling.'},null,2);}
+
+function genSum(m){const l=['INTEGRATION PASSPORT','='.repeat(50),'','Integration : '+m.name,'Version     : '+m.version,'Owner       : '+m.owner,'Pattern     : '+m.pattern,'Orchestrator: '+m.orch,'Endpoint    : '+m.cM+' '+m.cP+' — '+m.cO,'','DOWNSTREAM SYSTEMS:'];S.downstream.endpoints.forEach(ep=>l.push('  #'+ep.order+' ['+ep.execution+'] '+ep.system+' '+ep.method+' '+ep.path+' (TO:'+ep.timeout+'ms Retry:'+ep.retries+' Auth:'+ep.auth+')'));l.push('','MAPPINGS ('+S.mappings.length+'):');const grp={};S.mappings.forEach(m2=>{const ep=S.downstream.endpoints.find(e=>e.id===m2.epId);const k=ep?ep.system+' '+ep.method+' '+ep.path:'Unassigned';if(!grp[k])grp[k]=[];grp[k].push(m2);});Object.entries(grp).forEach(([ep,maps])=>{l.push('\n  '+ep+':');maps.forEach(m2=>l.push('    ['+m2.direction+'] '+m2.cF+(m2.direction==='request'?' → ':' ← ')+m2.dF+' ['+m2.transformType+']'+(m2.expression?' | '+m2.expression:'')+(m2.jsonata?' | JSONata: '+m2.jsonata:'')+(m2.notes?' | '+m2.notes:'')));});return l.join('\n');}
+
+function setOT(n){currentOTab=n;[1,2,3,4].forEach(i=>{const el=document.getElementById('ot'+i);if(el)el.classList.toggle('on',i===n);});const map={1:generatedOuts.openapi,2:generatedOuts.stepfn,3:generatedOuts.ai,4:generatedOuts.summary};document.getElementById('outPre').textContent=map[n]||'';}
+const outF={1:'consumer-openapi.json',2:'step-functions-asl.json',3:'ai-context.json',4:'mapping-summary.txt'};
+function copyOut(){navigator.clipboard.writeText(document.getElementById('outPre').textContent).then(()=>toast('Copied'));}
+function dlOut(){const a=document.createElement('a');a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(document.getElementById('outPre').textContent);a.download=outF[currentOTab];a.click();toast('Downloaded '+outF[currentOTab]);}
+
+// ═══════════ EXCEL PASSPORT ═══════════
+function exportPassport(){
+  try{
+    const m=getMeta();const wb=XLSX.utils.book_new();
+    const sumD=[['INTEGRATION PASSPORT','',''],['','',''],['Integration',m.name,''],['Version',m.version,''],['Owner',m.owner,''],['Pattern',m.pattern,''],['Orchestrator',m.orch,''],['Endpoint',m.cM+' '+m.cP,''],['Operation',m.cO,''],['Total Mappings',S.mappings.length,''],['DS Systems',S.downstream.endpoints.length,''],['Generated',new Date().toISOString(),'']];
+    const wsSu=XLSX.utils.aoa_to_sheet(sumD);wsSu['!cols']=[{wch:16},{wch:42},{wch:20}];XLSX.utils.book_append_sheet(wb,wsSu,'Summary');
+    const cH=['Field','Display','Section','Type','Format','Required','Nullable','Array','MaxLen','Description','Example','Enum','Pattern','Parent'];
+    const cR=[cH];CSECS.forEach(({k,l})=>(S.consumer[k]||[]).forEach(f=>cR.push([f.name,f.displayName||'',l,f.type,f.format||'',f.required?'Yes':'No',f.nullable?'Yes':'No',f.isArray?'Yes':'No',f.maxLength||'',f.description||'',f.example||'',(f.enum||[]).join(', '),f.pattern||'',f.parent||''])));
+    const wsC=XLSX.utils.aoa_to_sheet(cR);wsC['!cols']=[{wch:20},{wch:18},{wch:16},{wch:10},{wch:12},{wch:9},{wch:9},{wch:7},{wch:8},{wch:34},{wch:18},{wch:18},{wch:20},{wch:14}];XLSX.utils.book_append_sheet(wb,wsC,'Consumer Contract');
+    const dH=['System','Method','Path','Section','Field','Type','Required','Nullable','Array','Description','Example','Order','Execution','Auth','Timeout','Retries'];
+    const dR=[dH];S.downstream.endpoints.forEach(ep=>DSSECS.forEach(({k,l})=>(ep[k]||[]).forEach(f=>dR.push([ep.system,ep.method,ep.path,l,f.name,f.type,f.required?'Yes':'No',f.nullable?'Yes':'No',f.isArray?'Yes':'No',f.description||'',f.example||'',ep.order,ep.execution,ep.auth,ep.timeout,ep.retries]))));
+    const wsD=XLSX.utils.aoa_to_sheet(dR);wsD['!cols']=[{wch:20},{wch:8},{wch:24},{wch:15},{wch:20},{wch:10},{wch:9},{wch:9},{wch:7},{wch:30},{wch:16},{wch:8},{wch:12},{wch:10},{wch:10},{wch:8}];XLSX.utils.book_append_sheet(wb,wsD,'Downstream Systems');
+    const mH=['Direction','Consumer Field','Section','DS Field','DS Section','System','Method','Path','Call#','Transform','Expression','JSONata','Notes'];
+    const mR=[mH];S.mappings.forEach(m2=>{const ep=S.downstream.endpoints.find(e=>e.id===m2.epId);mR.push([m2.direction,m2.cF,m2.cSec||'',m2.dF,m2.dSec||'',ep?ep.system:'',ep?ep.method:'',ep?ep.path:'',ep?ep.order:'',m2.transformType,m2.expression||'',m2.jsonata||'',m2.notes||'']);});
+    const wsM=XLSX.utils.aoa_to_sheet(mR);wsM['!cols']=[{wch:10},{wch:20},{wch:15},{wch:20},{wch:14},{wch:20},{wch:8},{wch:24},{wch:7},{wch:13},{wch:28},{wch:28},{wch:28}];XLSX.utils.book_append_sheet(wb,wsM,'Field Mappings');
+    const eH=['System','Method','Path','Error Code','Description'];const eR=[eH];S.downstream.endpoints.forEach(ep=>(ep.errors||[]).forEach(e=>eR.push([ep.system,ep.method,ep.path,e.name,e.description||''])));(S.consumer.errors||[]).forEach(e=>eR.push(['Consumer',m.cM,m.cP,e.name,e.description||'']));
+    const wsE=XLSX.utils.aoa_to_sheet(eR);wsE['!cols']=[{wch:20},{wch:8},{wch:24},{wch:20},{wch:40}];XLSX.utils.book_append_sheet(wb,wsE,'Error Catalogue');
+    XLSX.writeFile(wb,m.name.replace(/\s+/g,'-')+'-Passport.xlsx');toast('Integration Passport exported');
+  }catch(err){toast('Export failed: '+err.message,true);}
+}
+
+// ═══════════ SESSION ═══════════
+function saveSession(){const m=getMeta();const a=document.createElement('a');a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify({S,meta:m},null,2));a.download='icd-session.json';a.click();toast('Session saved');}
+function loadSession(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=ev=>{try{const s=JSON.parse(ev.target.result);if(s.S){Object.assign(S,s.S);const m=s.meta||{};if(m.name)document.getElementById('mName').value=m.name;if(m.version)document.getElementById('mVer').value=m.version;if(m.owner)document.getElementById('mOwner').value=m.owner;if(m.pattern)document.getElementById('mPattern').value=m.pattern;if(m.orch)document.getElementById('mOrch').value=m.orch;if(m.cM)document.getElementById('cMeth').value=m.cM;if(m.cP)document.getElementById('cPath').value=m.cP;if(m.cO)document.getElementById('cOp').value=m.cO;renderConsumer();renderDownstream();rebuildCanvas();if(currentView==='table')renderTable();updateStatus();updateBadge();toast('Session loaded');}else toast('Invalid session',true);}catch(err){toast('Load error: '+err.message,true);}};rd.readAsText(f);e.target.value='';}
+
+// ═══════════ STATUS ═══════════
+function updateBadge(){document.getElementById('mapBadge').textContent=S.mappings.length+' mapping'+(S.mappings.length!==1?'s':'');}
+function updateStatus(){const t=Object.values(S.consumer).filter(Array.isArray).reduce((a,b)=>a+b.length,0);document.getElementById('stM').innerHTML='<span>'+S.mappings.length+'</span> mappings';document.getElementById('stC').innerHTML='<span>'+t+'</span> consumer fields';document.getElementById('stD').innerHTML='<span>'+S.downstream.endpoints.length+'</span> endpoints';}
+
+// ═══════════ RESIZE ═══════════
+let _rz=null;
+function startRz(e,side){_rz={side,x:e.clientX,w:side==='L'?document.getElementById('panL').offsetWidth:document.getElementById('panR').offsetWidth};document.addEventListener('mousemove',doRz);document.addEventListener('mouseup',stopRz);e.preventDefault();}
+function doRz(e){if(!_rz)return;const dx=e.clientX-_rz.x;if(_rz.side==='L'){const w=Math.max(180,Math.min(440,_rz.w+dx));document.getElementById('panL').style.width=w+'px';}else{const w=Math.max(180,Math.min(460,_rz.w-dx));document.getElementById('panR').style.width=w+'px';}}
+function stopRz(){_rz=null;document.removeEventListener('mousemove',doRz);document.removeEventListener('mouseup',stopRz);setTimeout(rebuildCanvas,80);}
+
+// ═══════════ HELPERS ═══════════
+function sid(s){return(s||'').replace(/[^a-zA-Z0-9]/g,'_');}
+
+// Close popup on outside click
+
+document.getElementById('mapScroll').addEventListener('scroll',()=>drawLines());
+window.addEventListener('resize',()=>setTimeout(rebuildCanvas,100));
+
+// ═══════════ DEMO DATA ═══════════
+(function demo(){
+  S.consumer.request=[
+    mkF({name:'cust_id',type:'string',required:true,description:'Customer ID from mobile app',example:'CUST-001',maxLength:'20',pattern:'^CUST-[0-9]+$'}),
+    mkF({name:'order_amt',type:'number',required:true,description:'Order amount in paise',example:'50000'}),
+    mkF({name:'first_name',type:'string',required:true,description:'Customer first name',example:'Arjun',maxLength:'50'}),
+    mkF({name:'last_name',type:'string',required:false,nullable:true,description:'Customer last name',example:'Sharma'}),
+    mkF({name:'status_code',type:'string',required:false,description:'Account status A/I/S',example:'A',enum:['A','I','S']}),
+    mkF({name:'mobile_no',type:'string',required:true,description:'Mobile with country code',example:'+919876543210'}),
+    mkF({name:'address',type:'object',required:false,description:'Address object'}),
+    mkF({name:'city',type:'string',required:false,description:'City name',example:'Mumbai',parent:'address'}),
+    mkF({name:'pincode',type:'string',required:false,description:'PIN code',example:'400001',parent:'address'})
+  ];
+  S.consumer.response=[
+    mkF({name:'transactionId',type:'string',required:true,format:'uuid',description:'Unique transaction reference'}),
+    mkF({name:'status',type:'string',required:true,description:'Transaction status',enum:['SUCCESS','PENDING','FAILED']}),
+    mkF({name:'message',type:'string',required:false,nullable:true,description:'Human readable message'})
+  ];
+  S.consumer.errors=[
+    mkF({name:'400',type:'string',description:'Validation error'}),
+    mkF({name:'502',type:'string',description:'Downstream unavailable'}),
+    mkF({name:'504',type:'string',description:'Downstream timeout'})
+  ];
+  S.consumer.headers=[
+    mkF({name:'x-correlation-id',type:'string',required:true,format:'uuid',description:'Trace correlation ID'}),
+    mkF({name:'x-api-version',type:'string',required:false,description:'API version',example:'v1'})
+  ];
+  S.downstream.endpoints=[
+    {id:'ep1',system:'Core Banking API',method:'POST',path:'/api/v1/payments',baseUrl:'https://corebanking.internal',summary:'Initiate payment',timeout:'15000',retries:'2',order:1,execution:'sequential',auth:'iam',authNotes:'AWS SigV4',
+      requestFields:[mkF({name:'customerId',type:'string',required:true}),mkF({name:'transactionAmount',type:'number',required:true,description:'Amount in INR'}),mkF({name:'customerName',type:'string',required:true}),mkF({name:'accountStatus',type:'string',required:false,enum:['active','inactive']})],
+      responseFields:[mkF({name:'paymentRef',type:'string',required:true,description:'Bank payment reference'}),mkF({name:'processingStatus',type:'string',required:true})],
+      pathParams:[],queryParams:[],dsHeaders:[mkF({name:'X-Bank-Client-Id',type:'string',required:true})],errors:[mkF({name:'INSUFFICIENT_FUNDS',type:'string'}),mkF({name:'ACCOUNT_FROZEN',type:'string'})]},
+    {id:'ep2',system:'Notification Service',method:'POST',path:'/api/v1/notify',baseUrl:'https://notify.internal',summary:'Send SMS notification',timeout:'5000',retries:'1',order:2,execution:'parallel',auth:'apikey',authNotes:'x-notify-key header',
+      requestFields:[mkF({name:'phoneNumber',type:'string',required:true}),mkF({name:'message',type:'string',required:true})],
+      responseFields:[mkF({name:'notificationId',type:'string',required:false,nullable:true})],
+      pathParams:[],queryParams:[],dsHeaders:[],errors:[]}
+  ];
+  renderConsumer();renderDownstream();updateStatus();
+  setTimeout(rebuildCanvas,250);
+})();
+
+
+
+// ── Missing globals and functions ─────────────────────────────────────
+let drawerInfo = null;
+
+function showBanner(msg){
+  const b=document.getElementById('mapBanner');
+  if(b){b.style.display='flex';document.getElementById('bannerTxt').textContent=msg;}
+}
+function hideBanner(){
+  const b=document.getElementById('mapBanner');if(b)b.style.display='none';
+}
+
+// ── Fix onILClick to use drawerOpen ───────────────────────────────────
+
+// ─── DRAWER ─────────────────────────────────────────────────────────────
+function drawerOpen(info){
+  drawerInfo=info;
+  const{type,field,section,epId,epIdx}=info;
+  const ep=epId?S.downstream.endpoints.find(e=>e.id===epId):null;
+  const ei=ep?S.downstream.endpoints.indexOf(ep):-1;
+  const col=ei>=0?EP_COLORS[ei%EP_COLORS.length]:(type==='consumer'?'#00e5a0':'#3d9eff');
+  document.getElementById('drawerDot').style.cssText='width:10px;height:10px;border-radius:50%;flex-shrink:0;background:'+col+';box-shadow:0 0 6px '+col+'88';
+  document.getElementById('drawerTitle').textContent=field.name;
+  document.getElementById('drawer').style.transform='translateX(0)';
+  const body=document.getElementById('drawerBody');body.innerHTML='';
+  body.appendChild(drawerSec('Field Details',fieldInfoEl(field,type,section,ep,col),true));
+  body.appendChild(drawerSec('Data Preview',dataPreviewEl(field),false));
+  const maps=getMapsFor(info);
+  body.appendChild(drawerSec('Mappings ('+maps.length+')',mapsEl(maps,info,col),true));
+}
+
+function closeDrawer(){
+  document.getElementById('drawer').style.transform='translateX(100%)';
+  drawerInfo=null;
+  document.querySelectorAll('.iln.selected,.fi.active,.fi.sel').forEach(n=>n.classList.remove('selected','active','sel'));
+}
+
+function drawerSec(title,contentEl,open){
+  const sec=document.createElement('div');sec.style.borderBottom='1px solid var(--bdr)';
+  const hdr=document.createElement('div');hdr.style.cssText='display:flex;align-items:center;gap:5px;padding:7px 12px;cursor:pointer;background:var(--bg3)';
+  hdr.onmouseenter=()=>hdr.style.background='var(--bg4)';hdr.onmouseleave=()=>hdr.style.background='var(--bg3)';
+  const arr=document.createElement('span');arr.style.cssText='font-size:8px;color:var(--tx3);flex-shrink:0';arr.textContent=open?'▼':'▶';
+  const ttl=document.createElement('span');ttl.style.cssText='font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2)';ttl.textContent=title;
+  hdr.appendChild(arr);hdr.appendChild(ttl);
+  const bdy=document.createElement('div');bdy.style.cssText='padding:10px 12px;flex-direction:column;gap:5px;display:'+(open?'flex':'none');
+  hdr.onclick=()=>{const h=bdy.style.display==='none';bdy.style.display=h?'flex':'none';arr.textContent=h?'▼':'▶';};
+  if(contentEl)bdy.appendChild(contentEl);
+  sec.appendChild(hdr);sec.appendChild(bdy);return sec;
+}
+
+function dr(lbl,val,vc){
+  const r=document.createElement('div');r.style.cssText='display:flex;gap:6px;align-items:flex-start';
+  const l=document.createElement('div');l.style.cssText='font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;width:64px;flex-shrink:0;padding-top:1px';l.textContent=lbl;
+  const v=document.createElement('div');v.style.cssText='font-size:10px;font-family:var(--M);color:'+(vc||'var(--tx)')+';flex:1;word-break:break-word;line-height:1.5';v.textContent=val;
+  r.appendChild(l);r.appendChild(v);return r;
+}
+
+function fieldInfoEl(f,type,section,ep,col){
+  const div=document.createElement('div');div.style.cssText='display:flex;flex-direction:column;gap:5px';
+  if(f.name)div.appendChild(dr('Name',f.name,col));
+  if(f.type)div.appendChild(dr('Type',f.type+(f.isArray?'[]':'')+(f.format?' ('+f.format+')':''),'var(--C)'));
+  div.appendChild(dr('Section',section,''));
+  div.appendChild(dr('Source',type==='consumer'?'Consumer API':(ep?ep.system+' '+ep.method+' '+ep.path:'Downstream'),''));
+  div.appendChild(dr('Required',f.required?'Yes':'No',f.required?'var(--G)':'var(--tx3)'));
+  if(f.description)div.appendChild(dr('Desc',f.description,''));
+  if(f.maxLength)div.appendChild(dr('MaxLen',String(f.maxLength),''));
+  if(f.pattern)div.appendChild(dr('Pattern',f.pattern,'var(--A)'));
+  if(f.enum&&f.enum.length){
+    const r=document.createElement('div');r.style.cssText='display:flex;gap:6px';
+    const l=document.createElement('div');l.style.cssText='font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;width:64px;flex-shrink:0;padding-top:1px';l.textContent='Enum';
+    const v=document.createElement('div');v.style.cssText='flex:1;display:flex;flex-wrap:wrap;gap:2px';
+    f.enum.forEach(e=>{const s=document.createElement('span');s.style.cssText='font-size:8px;font-family:var(--M);padding:1px 5px;border-radius:3px;border:1px solid '+col+'44;color:'+col;s.textContent=e;v.appendChild(s);});
+    r.appendChild(l);r.appendChild(v);div.appendChild(r);
+  }
+  const eb=document.createElement('button');eb.style.cssText='margin-top:4px;background:transparent;border:1px solid var(--bdr2);border-radius:6px;padding:4px 10px;font-size:10px;color:var(--tx2);cursor:pointer;width:100%';eb.textContent='✎ Edit Field';
+  eb.onmouseenter=()=>{eb.style.borderColor='var(--G)';eb.style.color='var(--G)';};eb.onmouseleave=()=>{eb.style.borderColor='var(--bdr2)';eb.style.color='var(--tx2)';};
+  eb.onclick=()=>{if(!drawerInfo)return;const di=drawerInfo;if(di.type==='consumer'){const idx=(S.consumer[di.section]||[]).indexOf(f);editField('consumer',di.section,idx,null);}else{const idx=(S.downstream.endpoints[di.epIdx]?.[di.section]||[]).indexOf(f);editField('ds',di.section,idx,di.epIdx);}};
+  div.appendChild(eb);return div;
+}
+
+function dataPreviewEl(f){
+  const div=document.createElement('div');div.style.cssText='display:flex;flex-direction:column;gap:6px';
+  const sampleMap={string:'example_value',number:42.5,integer:42,boolean:true,object:{},array:[],date:'2024-01-01',datetime:'2024-01-01T00:00:00Z',uuid:'f47ac10b-58cc-4372-a567-0e02b2c3d479'};
+  const sv=f.example||(f.enum&&f.enum.length?f.enum[0]:null)||sampleMap[f.type]||'example';
+  const sample=f.isArray?[sv]:sv;
+  const pre1=document.createElement('pre');pre1.style.cssText='background:var(--bg);border:1px solid var(--bdr2);border-radius:6px;padding:8px;font-family:var(--M);font-size:9px;color:var(--G);overflow:auto;margin:0;white-space:pre-wrap';pre1.textContent=JSON.stringify({[f.name]:sample},null,2);
+  const lbl=document.createElement('div');lbl.style.cssText='font-size:9px;color:var(--tx3);font-style:italic';lbl.textContent='OpenAPI schema:';
+  const schema={type:f.isArray?'array':f.type};
+  if(f.format)schema.format=f.format;if(f.description)schema.description=f.description;if(f.example)schema.example=f.example;if(f.enum&&f.enum.length)schema.enum=f.enum;if(f.pattern)schema.pattern=f.pattern;if(f.maxLength)schema.maxLength=parseInt(f.maxLength);if(f.nullable)schema.nullable=true;if(f.isArray)schema.items={type:f.type};
+  const pre2=document.createElement('pre');pre2.style.cssText='background:var(--bg);border:1px solid var(--bdr2);border-radius:6px;padding:8px;font-family:var(--M);font-size:9px;color:var(--B);overflow:auto;margin:0;white-space:pre-wrap';pre2.textContent=JSON.stringify({[f.name]:schema},null,2);
+  div.appendChild(pre1);div.appendChild(lbl);div.appendChild(pre2);return div;
+}
+
+function getMapsFor(info){
+  const{type,field,section,epId}=info;
+  if(type==='consumer')return S.mappings.filter(m=>m.cF===field.name&&m.cSec===section);
+  return S.mappings.filter(m=>m.dF===field.name&&m.epId===epId&&m.dSec===section);
+}
+
+function mapsEl(maps,info,col){
+  const div=document.createElement('div');div.style.cssText='display:flex;flex-direction:column;gap:5px';
+  if(!maps.length){const e=document.createElement('div');e.style.cssText='font-size:10px;color:var(--tx3);padding:6px 0;text-align:center';e.textContent='No mappings yet';div.appendChild(e);}
+  else{maps.forEach(m=>{
+    const ep=S.downstream.endpoints.find(e=>e.id===m.epId);
+    const isReq=m.direction==='request';const other=info.type==='consumer'?m.dF:m.cF;
+    const row=document.createElement('div');row.style.cssText='background:var(--bg3);border-radius:6px;border:1px solid var(--bdr2);padding:7px 9px;display:flex;flex-direction:column;gap:4px';
+    const h=document.createElement('div');h.style.cssText='display:flex;align-items:center;gap:4px;flex-wrap:wrap';
+    const db=document.createElement('span');db.style.cssText='font-size:8px;font-family:var(--M);padding:1px 5px;border-radius:3px;background:'+(isReq?'rgba(0,229,160,.08)':'rgba(61,158,255,.08)')+';color:'+(isReq?'var(--G)':'var(--B)')+';border:1px solid '+(isReq?'rgba(0,229,160,.2)':'rgba(61,158,255,.2)');db.textContent=m.direction;
+    const tb=document.createElement('span');tb.style.cssText='font-size:8px;font-family:var(--M);padding:1px 5px;border-radius:3px;background:var(--bg4);border:1px solid var(--bdr2);color:var(--tx2)';tb.textContent=m.transformType;
+    const fs=document.createElement('span');fs.style.cssText='font-size:10px;font-family:var(--M);color:'+(isReq?'var(--B)':'var(--G)')+';flex:1;overflow:hidden;text-overflow:ellipsis';fs.textContent=(isReq?'→ ':'← ')+other;
+    h.appendChild(db);h.appendChild(tb);h.appendChild(fs);row.appendChild(h);
+    if(ep){const d=document.createElement('div');d.style.cssText='font-size:9px;color:var(--tx3);font-family:var(--M)';d.textContent=ep.method+' '+ep.path+' ('+ep.system+')';row.appendChild(d);}
+    if(m.expression){const d=document.createElement('div');d.style.cssText='font-size:9px;color:var(--A);font-family:var(--M)';d.textContent='expr: '+m.expression;row.appendChild(d);}
+    if(m.jsonata){const d=document.createElement('div');d.style.cssText='font-size:9px;color:var(--C);font-family:var(--M)';d.textContent='JSONata: '+m.jsonata;row.appendChild(d);}
+    if(m.notes){const d=document.createElement('div');d.style.cssText='font-size:9px;color:var(--tx3)';d.textContent=m.notes;row.appendChild(d);}
+    const acts=document.createElement('div');acts.style.cssText='display:flex;gap:4px;justify-content:flex-end;margin-top:2px';
+    const mid=m.id;
+    const eb=document.createElement('button');eb.style.cssText='background:transparent;border:1px solid var(--bdr2);border-radius:4px;padding:2px 8px;font-size:9px;color:var(--tx2);cursor:pointer';eb.textContent='✎ Edit';eb.onclick=()=>editMapping(mid);
+    const xb=document.createElement('button');xb.style.cssText='background:transparent;border:1px solid var(--R);border-radius:4px;padding:2px 8px;font-size:9px;color:var(--R);cursor:pointer';xb.textContent='× Del';xb.onclick=()=>{delMapping(mid);if(drawerInfo)drawerOpen(drawerInfo);};
+    acts.appendChild(eb);acts.appendChild(xb);row.appendChild(acts);div.appendChild(row);
+  });}
+  const ab=document.createElement('button');ab.style.cssText='display:flex;align-items:center;justify-content:center;gap:4px;padding:5px;border-radius:6px;border:1px dashed var(--bdr2);color:var(--tx3);cursor:pointer;font-size:9px;background:transparent;width:100%;margin-top:2px';ab.textContent='+ Add mapping from this field';
+  ab.onmouseenter=()=>{ab.style.borderColor='var(--G)';ab.style.color='var(--G)';};ab.onmouseleave=()=>{ab.style.borderColor='var(--bdr2)';ab.style.color='var(--tx3)';};
+  ab.onclick=()=>{const di=drawerInfo;pendingFrom={name:di.field.name,target:di.type,section:di.section,epIdx:di.epIdx,epId:di.epId,el:null};showBanner('"'+di.field.name+'" ready — click '+(di.type==='consumer'?'a downstream':'a consumer')+' field');closeDrawer();};
+  div.appendChild(ab);return div;
+}
+
+// Close drawer on outside click
+document.addEventListener('click',function(e){
+  const dr=document.getElementById('drawer');
+  if(dr&&dr.style.transform!=='translateX(100%)'&&!dr.contains(e.target)&&!e.target.closest('.iln')&&!e.target.closest('.fi')){closeDrawer();}
+});
+
+// Scroll redraws with RAF
+document.getElementById('mapScroll').addEventListener('scroll',()=>requestAnimationFrame(drawLines));
+
+
+function drawLines(){
+  const svg = document.getElementById('mapSvg');
+  if (!svg) return;
+  svg.innerHTML = '';
+  const mc = document.getElementById('mapCols');
+  const colC = document.getElementById('colC');
+  const bodyEl = document.getElementById('colCBody');
+  if (!mc || !colC) return;
+
+  const w = Math.max(mc.offsetWidth || 700, 700);
+  const h = Math.max(mc.scrollHeight || 400, colC.offsetHeight + 40 || 400, 400);
+  svg.setAttribute('width', w); svg.setAttribute('height', h);
+  svg.style.width = w + 'px'; svg.style.height = h + 'px';
+
+  const mcR = mc.getBoundingClientRect();
+  const st = bodyEl ? bodyEl.scrollTop : 0;
+
+  function geom(el) {
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    if (!r.width && !r.height) return null;
+    return {
+      cx: r.left - mcR.left + r.width / 2,
+      cy: r.top - mcR.top + st + r.height / 2,
+      le: r.left - mcR.left,
+      re: r.right - mcR.left,
+    };
+  }
+
+  // ── HALF LINES: every IL node gets a stub from its origin side panel ──
+  // Consumer IL nodes: stub from consumer panel field → IL node left edge
+  document.querySelectorAll('[id^="iln_consumer_"]').forEach(node => {
+    // Extract field name from id: iln_consumer_c_fieldName
+    const parts = node.id.split('_');
+    const fname = parts.slice(3).join('_'); // field name (sid'd)
+    // Find corresponding consumer panel field (any section)
+    let panelEl = null;
+    const csecs = ['request','path_params','query','headers','response','errors'];
+    for (const k of csecs) {
+      panelEl = document.getElementById('cf_' + sid(k) + '_' + fname);
+      if (panelEl) break;
+    }
+    const nG = geom(node);
+    const pG = geom(panelEl);
+    if (!nG) return;
+    const isMapped = node.classList.contains('mapped');
+    const x1 = pG ? pG.re : 0;
+    const y1 = pG ? pG.cy : nG.cy;
+    const x2 = nG.le;
+    const y2 = nG.cy;
+    // Bezier stub
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    const cx = (x1 + x2) / 2;
+    path.setAttribute('d','M'+x1+','+y1+' C'+cx+','+y1+' '+cx+','+y2+' '+x2+','+y2);
+    path.setAttribute('stroke','#00e5a0');
+    path.setAttribute('stroke-width', isMapped ? '1.5' : '1');
+    path.setAttribute('fill','none');
+    path.setAttribute('opacity', isMapped ? '0.5' : '0.2');
+    if (!isMapped) path.setAttribute('stroke-dasharray','4,3');
+    path.style.pointerEvents = 'none';
+    svg.appendChild(path);
+    // Small dot at IL node entry
+    const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('cx', x2); dot.setAttribute('cy', y2);
+    dot.setAttribute('r','3'); dot.setAttribute('fill','#00e5a0');
+    dot.setAttribute('opacity', isMapped ? '0.6' : '0.25');
+    dot.style.pointerEvents = 'none';
+    svg.appendChild(dot);
+  });
+
+  // Downstream IL nodes: stub from IL node right edge → downstream panel field
+  S.downstream.endpoints.forEach((ep, ei) => {
+    const c = EP_COLORS[ei % EP_COLORS.length];
+    ['responseFields','dsHeaders','errors'].forEach(k => {
+      (ep[k]||[]).forEach(f => {
+        const node = document.getElementById('iln_ds_'+ep.id+'_'+sid(f.name));
+        const nG = geom(node);
+        if (!nG) return;
+        const isMapped = node && node.classList.contains('mapped');
+        // Find panel field on right
+        let panelEl = null;
+        const dssecs = ['requestFields','responseFields','pathParams','queryParams','dsHeaders','errors'];
+        for (const dk of dssecs) {
+          panelEl = document.getElementById('dsf_'+ei+'_'+sid(dk)+'_'+sid(f.name));
+          if (panelEl) break;
+        }
+        const pG = geom(panelEl);
+        const x1 = nG.re;
+        const y1 = nG.cy;
+        const x2 = pG ? pG.le : w;
+        const y2 = pG ? pG.cy : nG.cy;
+        const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+        const cx = (x1 + x2) / 2;
+        path.setAttribute('d','M'+x1+','+y1+' C'+cx+','+y1+' '+cx+','+y2+' '+x2+','+y2);
+        path.setAttribute('stroke', c);
+        path.setAttribute('stroke-width', isMapped ? '1.5' : '1');
+        path.setAttribute('fill','none');
+        path.setAttribute('opacity', isMapped ? '0.5' : '0.2');
+        if (!isMapped) path.setAttribute('stroke-dasharray','4,3');
+        path.style.pointerEvents = 'none';
+        svg.appendChild(path);
+        // Dot at IL node exit
+        const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        dot.setAttribute('cx', x1); dot.setAttribute('cy', y1);
+        dot.setAttribute('r','3'); dot.setAttribute('fill', c);
+        dot.setAttribute('opacity', isMapped ? '0.6' : '0.25');
+        dot.style.pointerEvents = 'none';
+        svg.appendChild(dot);
+      });
+    });
+  });
+
+  // ── FULL LINES: mapped fields — consumer panel → IL node → ds panel ───
+  S.mappings.forEach(m => {
+    const ep = S.downstream.endpoints.find(e => e.id === m.epId);
+    const ei = ep ? S.downstream.endpoints.indexOf(ep) : -1;
+    const epCol = ei >= 0 ? EP_COLORS[ei % EP_COLORS.length] : '#888';
+    const isHL = hlMid === m.id;
+    const isDim = hlMid && !isHL;
+    const op = isDim ? 0.06 : isHL ? 0.92 : 0.6;
+    const sw = isHL ? 2.5 : 1.5;
+    const lineCol = m.direction === 'request' ? '#00e5a0' : epCol;
+    const dashed = m.direction === 'response';
+
+    // Consumer panel field
+    const consEl = document.getElementById('cf_' + sid(m.cSec) + '_' + sid(m.cF));
+    // Consumer IL node
+    const ilCEl = document.querySelector('[id^="iln_consumer_"][id$="_' + sid(m.cF) + '"]');
+    // Downstream IL node
+    const ilDEl = ep ? document.querySelector('[id^="iln_ds_' + ep.id + '"][id$="_' + sid(m.dF) + '"]') : null;
+    // Downstream panel field
+    let dsEl = null;
+    if (ep) {
+      const secs = ['requestFields','responseFields','pathParams','queryParams','dsHeaders','errors'];
+      for (const k of secs) {
+        dsEl = document.getElementById('dsf_' + ei + '_' + sid(k) + '_' + sid(m.dF));
+        if (dsEl) break;
+      }
+    }
+
+    const lG = geom(consEl);   // left panel consumer field
+    const cG = geom(ilCEl);    // IL consumer node
+    const dG = geom(ilDEl);    // IL downstream node
+    const rG = geom(dsEl);     // right panel downstream field
+
+    // Segment 1: consumer panel right edge → IL consumer node LEFT edge
+    if (lG && cG) {
+      drawBez(svg, lG.re, lG.cy, cG.le, cG.cy, lineCol, dashed, op, sw, m.id);
+    }
+
+    // Segment 2: IL consumer node RIGHT edge → IL downstream node RIGHT edge
+    // (faint dashed inside IL — shows the mapping link between the two nodes)
+    if (cG && dG) {
+      const link = document.createElementNS('http://www.w3.org/2000/svg','path');
+      const mx = (cG.re + dG.re) / 2;
+      link.setAttribute('d','M'+cG.re+','+cG.cy+' C'+mx+','+cG.cy+' '+mx+','+dG.cy+' '+dG.re+','+dG.cy);
+      link.setAttribute('stroke', lineCol);
+      link.setAttribute('stroke-width','1');
+      link.setAttribute('fill','none');
+      link.setAttribute('opacity', isDim ? 0.03 : isHL ? 0.35 : 0.15);
+      link.setAttribute('stroke-dasharray','3,3');
+      link.style.pointerEvents = 'none';
+      svg.appendChild(link);
+    }
+
+    // Segment 3: IL downstream node RIGHT edge → downstream panel left edge
+    if (dG && rG) {
+      drawBez(svg, dG.re, dG.cy, rG.le, rG.cy, lineCol, dashed, op, sw, m.id);
+      // Arrowhead at destination
+      const ah = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      ah.setAttribute('points', rG.le+','+rG.cy+' '+(rG.le-7)+','+(rG.cy-3.5)+' '+(rG.le-7)+','+(rG.cy+3.5));
+      ah.setAttribute('fill', lineCol); ah.setAttribute('opacity', op);
+      ah.style.pointerEvents = 'none';
+      svg.appendChild(ah);
+    } else if (cG && !dG && rG) {
+      // No ds IL node — draw directly from consumer IL node to right panel
+      drawBez(svg, cG.re, cG.cy, rG.le, rG.cy, lineCol, dashed, op, sw, m.id);
+      const ah = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      ah.setAttribute('points', rG.le+','+rG.cy+' '+(rG.le-7)+','+(rG.cy-3.5)+' '+(rG.le-7)+','+(rG.cy+3.5));
+      ah.setAttribute('fill', lineCol); ah.setAttribute('opacity', op);
+      ah.style.pointerEvents = 'none';
+      svg.appendChild(ah);
+    }
+
+    // Transform label between the two IL nodes
+    if (m.transformType !== 'direct' && cG && dG) {
+      const lx = cG.cx;
+      const ly = (cG.cy + dG.cy) / 2 - 8;
+      const label = '[' + m.transformType + ']';
+      const bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      bg.setAttribute('x', lx - label.length*2.5-3); bg.setAttribute('y', ly-9);
+      bg.setAttribute('width', label.length*5+6); bg.setAttribute('height',12);
+      bg.setAttribute('rx','3'); bg.setAttribute('fill','var(--bg2)');
+      bg.setAttribute('opacity', isDim?0.05:0.9); bg.style.pointerEvents='none';
+      svg.appendChild(bg);
+      const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x',lx); t.setAttribute('y',ly);
+      t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','8');
+      t.setAttribute('font-family','JetBrains Mono,monospace');
+      t.setAttribute('fill',lineCol); t.setAttribute('opacity',isDim?0.05:0.8);
+      t.textContent=label; t.style.pointerEvents='none';
+      svg.appendChild(t);
+    }
+  });
+}
+
+function drawBez(svg, x1, y1, x2, y2, col, dashed, op, sw, mid) {
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  const cx = (x1+x2)/2;
+  path.setAttribute('d','M'+x1+','+y1+' C'+cx+','+y1+' '+cx+','+y2+' '+x2+','+y2);
+  path.setAttribute('stroke',col); path.setAttribute('stroke-width',sw);
+  path.setAttribute('fill','none'); path.setAttribute('opacity',op);
+  if (dashed) path.setAttribute('stroke-dasharray','4,3');
+  path.style.cssText = 'cursor:pointer;pointer-events:all';
+  if (mid) path.addEventListener('click',()=>hlMapping(mid));
+  svg.appendChild(path);
+}
+
+// drawSeg kept as alias for compatibility
+function drawSeg(svg,x1,y1,x2,y2,col,dashed,op,sw,mid){ drawBez(svg,x1,y1,x2,y2,col,dashed,op,sw,mid); }
+function arrowH(svg,x,y,col,op){ const ah=document.createElementNS('http://www.w3.org/2000/svg','polygon');ah.setAttribute('points',x+','+y+' '+(x-7)+','+(y-3.5)+' '+(x-7)+','+(y+3.5));ah.setAttribute('fill',col);ah.setAttribute('opacity',op);svg.appendChild(ah); }
+function drawStubLines(){} // now handled inside drawLines
+
+
+
+
+
+// Make IL nodes also drag-droppable targets
+function makeILNodeDroppable(node, type, section, epId, epIdx) {
+  node.addEventListener('dragover', e => {
+    const src = getDragSrc();
+    if (src && src.target !== type) { e.preventDefault(); node.classList.add('drop-target'); }
+  });
+  node.addEventListener('dragleave', () => node.classList.remove('drop-target'));
+  node.addEventListener('drop', e => {
+    e.preventDefault(); node.classList.remove('drop-target');
+    const src = getDragSrc();
+    if (!src || src.target === type) return;
+    clearSel(); pendingFrom = null; hideBanner();
+    const f = type==='consumer'
+      ? (S.consumer[section]||[]).find(x=>x.name===(node.id.split('_').pop()))
+      : null;
+    const cS = src.target==='consumer' ? src : {name:src.name,target:src.target,section:src.section,epIdx:src.epIdx,epId:src.epId};
+    const dS = src.target==='ds' ? src : {name:src.name,target:src.target,section:src.section,epIdx:src.epIdx,epId:src.epId};
+    openTmModal(src.target==='consumer'?src:cS, src.target==='ds'?src:dS, null);
+  });
+}
+
+</script>
+</body>
+</html>
